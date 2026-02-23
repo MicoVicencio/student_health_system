@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nurse Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f6f8;
+    margin: 0; padding: 0;
+}
+header {
+    background-color: #1e3a8a; /* Matching student theme */
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+header img {
+    height: 50px;
+    margin-right: 1rem;
+}
+header h1 {
+    font-size: 1.8rem;
+    margin: 0;
+}
+.logout-btn {
+    background: #f97316;
+    border: none;
+    padding: 0.5rem 1rem;
+    color: white;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.logout-btn:hover { background: #ea580c; }
+
+/* Summary cards */
+.summary-cards {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 2rem;
+    flex-wrap: wrap;
+}
+.card {
+    background: white;
+    flex: 1;
+    min-width: 200px;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+.card i {
+    font-size: 2rem;
+    color: #1e3a8a;
+}
+
+/* Student Table */
+table {
+    width: 96%;
+    margin: 1rem 2%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+th, td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+th {
+    background-color: #1e3a8a;
+    color: white;
+    font-weight: 500;
+}
+tr:hover { background-color: #f1f5f9; cursor: pointer; }
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    overflow: auto;
+    background: rgba(0,0,0,0.5);
+    transition: opacity 0.3s;
+}
+.modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 800px;
+    position: relative;
+    transition: transform 0.3s;
+}
+.close {
+    color: #aaa;
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+.close:hover { color: #000; }
+.visit-history {
+    margin-top: 1rem;
+    border-top: 1px solid #ddd;
+    padding-top: 1rem;
+}
+.visit-history h3 { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<header>
+    <div style="display:flex; align-items:center;">
+        <img src="/static/logo.png" alt="School Logo">
+        <h1>Cainta Catholic College Clinic</h1>
+    </div>
+    <form action="{{ url_for('logout') }}">
+        <button class="logout-btn">Logout</button>
+    </form>
+</header>
+
+<div class="summary-cards">
+    <div class="card"><i class="fas fa-user-graduate"></i><div><strong>{{ total_students }}</strong><br>Total Students</div></div>
+    <div class="card"><i class="fas fa-thermometer-half"></i><div><strong>{{ total_visits_today }}</strong><br>Visits Today</div></div>
+    <div class="card"><i class="fas fa-allergies"></i><div><strong>{{ students_with_allergies }}</strong><br>Allergies</div></div>
+    <div class="card"><i class="fas fa-heartbeat"></i><div><strong>{{ students_with_medical_conditions }}</strong><br>Medical Conditions</div></div>
+</div>
+
+<table id="studentsTable">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Full Name</th>
+            <th>Grade</th>
+            <th>Section</th>
+            <th>Allergies</th>
+            <th>Medical Condition</th>
+            <th>Last Visit</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for student in students %}
+        <tr onclick="openModal({{ student['id'] }})">
+            <td>{{ student['id'] }}</td>
+            <td>{{ student['full_name'] }}</td>
+            <td>{{ student['grade'] }}</td>
+            <td>{{ student['section'] }}</td>
+            <td>{{ student['allergies'] }}</td>
+            <td>{{ student['medical_condition'] }}</td>
+            <td>{{ student['id'] | get_last_visit }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Modal -->
+<div id="studentModal" class="modal">
+    <div class="modal-content" id="modalContent">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div id="modalBody">
+            <!-- Filled dynamically -->
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal(studentId){
+    fetch('/get_student_info/' + studentId)
+    .then(response => response.json())
+    .then(data => {
+        let body = `
+            <h2>${data.full_name}</h2>
+            <p><strong>ID:</strong> ${data.id}</p>
+            <p><strong>RFID:</strong> ${data.rfid_uid}</p>
+            <p><strong>Address:</strong> ${data.address}</p>
+            <p><strong>Age:</strong> ${data.age}</p>
+            <p><strong>Grade:</strong> ${data.grade} - ${data.section}</p>
+            <p><strong>Allergies:</strong> ${data.allergies}</p>
+            <p><strong>Medical Condition:</strong> ${data.medical_condition}</p>
+            <p><strong>Parent Name:</strong> ${data.parent_name}</p>
+            <p><strong>Contact:</strong> ${data.parent_contact_number}</p>
+            <p><strong>Email:</strong> ${data.parent_email}</p>
+
+            <div class="visit-history">
+                <h3>Visit History</h3>
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr><th>Temp</th><th>Complaint</th><th>Diagnosis</th><th>Medicine</th><th>Time In</th></tr>
+                    </thead>
+                    <tbody>
+                        ${data.visits.map(v => `
+                            <tr>
+                                <td>${v.temperature}</td>
+                                <td>${v.complaint}</td>
+                                <td>${v.diagnosis}</td>
+                                <td>${v.medicine}</td>
+                                <td>${v.time_in}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        document.getElementById('modalBody').innerHTML = body;
+        document.getElementById('studentModal').style.display = 'block';
+    });
+}
+
+function closeModal(){
+    document.getElementById('studentModal').style.display = 'none';
+}
+window.onclick = function(event) {
+    if(event.target == document.getElementById('studentModal')){
+        closeModal();
+    }
+}
+</script>
+</body>
+</html>
