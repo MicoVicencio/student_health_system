@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinic System Login</title>
+
+<style>
+/* ============================= */
+/* UNIVERSITY THEME COLORS       */
+/* ============================= */
+
+:root {
+    --primary-blue: #1f4fa3;
+    --dark-blue: #173c7a;
+    --light-blue: #2f66cc;
+    --white: #ffffff;
+    --glass: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================= */
+/* GLOBAL STYLES */
+/* ============================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    height: 100vh;
+    background: linear-gradient(135deg, var(--dark-blue), var(--primary-blue));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* Background animated circles */
+body::before,
+body::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    animation: float 8s infinite ease-in-out alternate;
+}
+
+body::before {
+    width: 400px;
+    height: 400px;
+    top: -100px;
+    left: -100px;
+}
+
+body::after {
+    width: 300px;
+    height: 300px;
+    bottom: -100px;
+    right: -100px;
+}
+
+@keyframes float {
+    from { transform: translateY(0px); }
+    to { transform: translateY(40px); }
+}
+
+/* ============================= */
+/* LOGIN CARD */
+/* ============================= */
+
+.login-container {
+    width: 380px;
+    padding: 40px;
+    border-radius: 20px;
+    background: var(--glass);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    color: var(--white);
+    animation: fadeIn 1s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.logo {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.logo img {
+    width: 90px;
+    margin-bottom: 10px;
+}
+
+.logo h2 {
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+/* ============================= */
+/* INPUT FIELDS */
+/* ============================= */
+
+.input-group {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 10px;
+    border: none;
+    border-radius: 8px;
+    outline: none;
+    background: rgba(255,255,255,0.2);
+    color: var(--white);
+    font-size: 14px;
+}
+
+.input-group label {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    font-size: 13px;
+    pointer-events: none;
+    transition: 0.3s;
+    color: #ddd;
+}
+
+.input-group input:focus + label,
+.input-group input:valid + label {
+    top: -8px;
+    left: 8px;
+    background: var(--primary-blue);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+/* ============================= */
+/* PASSWORD TOGGLE */
+/* ============================= */
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 12px;
+    color: #eee;
+}
+
+/* ============================= */
+/* BUTTON */
+/* ============================= */
+
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: var(--white);
+    color: var(--primary-blue);
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.login-btn:hover {
+    background: var(--light-blue);
+    color: var(--white);
+}
+
+/* ============================= */
+/* FOOTER */
+/* ============================= */
+
+.footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* ============================= */
+/* RESPONSIVE */
+/* ============================= */
+
+@media(max-width: 400px) {
+    .login-container {
+        width: 90%;
+        padding: 25px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <div class="logo">
+        <img src="static/logo.jpg" alt="University Logo">
+        <h2>Clinic Monitoring System</h2>
+        <p style="font-size:12px; opacity:0.8;">University of Perpetual Help Laguna</p>
+    </div>
+
+    <form method="POST">
+
+        <div class="input-group">
+            <input type="text" name="username" required>
+            <label>Username</label>
+        </div>
+
+        <div class="input-group">
+            <input type="password" name="password" id="password" required>
+            <label>Password</label>
+            <span class="toggle-password" onclick="togglePassword()">Show</span>
+        </div>
+
+        <button type="submit" class="login-btn">LOGIN</button>
+
+    </form>
+
+    <div class="footer">
+        RFID-Based Student Health Monitoring System © 2026
+    </div>
+
+</div>
+
+<script>
+
+/* ============================= */
+/* SHOW / HIDE PASSWORD */
+/* ============================= */
+
+function togglePassword() {
+    const password = document.getElementById("password");
+    const toggle = document.querySelector(".toggle-password");
+
+    if (password.type === "password") {
+        password.type = "text";
+        toggle.innerText = "Hide";
+    } else {
+        password.type = "password";
+        toggle.innerText = "Show";
+    }
+}
+
+/* ============================= */
+/* SMOOTH INPUT FOCUS EFFECT */
+/* ============================= */
+
+document.querySelectorAll("input").forEach(input => {
+    input.addEventListener("focus", () => {
+        input.style.background = "rgba(255,255,255,0.3)";
+    });
+    input.addEventListener("blur", () => {
+        input.style.background = "rgba(255,255,255,0.2)";
+    });
+});
+
+</script>
+
+</body>
+</html>
