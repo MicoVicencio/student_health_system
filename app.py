@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 import sqlite3
 from werkzeug.security import check_password_hash
 import database
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "clinic_secret_key"
@@ -50,32 +51,43 @@ def login():
 
 
 # ================= NURSE DASHBOARD =================
-# ================= NURSE DASHBOARD =================
 @app.route("/nurse_dashboard")
 def nurse_dashboard():
     if session.get("role") != "nurse":
         return redirect(url_for("login"))
 
     conn = get_db()
+
+    # Statistics for the cards
+    today = datetime.now().strftime("%Y-%m-%d")
+    total_students = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
+    total_visits_today = conn.execute("SELECT COUNT(*) FROM clinic_visits WHERE time_in LIKE ?", (f"{today}%",)).fetchone()[0]
+    students_with_allergies = conn.execute("SELECT COUNT(*) FROM students WHERE allergies != '' AND allergies IS NOT NULL").fetchone()[0]
+    students_with_medical_conditions = conn.execute("SELECT COUNT(*) FROM students WHERE medical_condition != '' AND medical_condition IS NOT NULL").fetchone()[0]
+
+    # Fetch nurse info to welcome
+    # IMPORTANT: session["user_id"] must match the ID in the nurses table
+    nurse_id = session.get("user_id")
+    nurse = conn.execute("SELECT * FROM nurses WHERE id=?", (nurse_id,)).fetchone()
+
     # Fetch all students
     students = conn.execute("SELECT * FROM students").fetchall()
+    students_with_last_visit = []
+    for s in students:
+        last_visit = conn.execute(
+            "SELECT time_in FROM clinic_visits WHERE student_id=? ORDER BY time_in DESC LIMIT 1",
+            (s["id"],)
+        ).fetchone()
+        s_dict = dict(s)
+        s_dict['last_visit'] = last_visit['time_in'] if last_visit else "No visits"
+        students_with_last_visit.append(s_dict)
 
-    # Fetch summary stats
-    total_students = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
-    total_visits_today = conn.execute(
-        "SELECT COUNT(*) FROM clinic_visits WHERE date(time_in) = date('now')"
-    ).fetchone()[0]
-    students_with_allergies = conn.execute(
-        "SELECT COUNT(*) FROM students WHERE allergies IS NOT NULL AND allergies != ''"
-    ).fetchone()[0]
-    students_with_medical_conditions = conn.execute(
-        "SELECT COUNT(*) FROM students WHERE medical_condition IS NOT NULL AND medical_condition != ''"
-    ).fetchone()[0]
     conn.close()
 
     return render_template(
         "nurse_dashboard.html",
-        students=students,
+        nurse=nurse,
+        students=students_with_last_visit,
         total_students=total_students,
         total_visits_today=total_visits_today,
         students_with_allergies=students_with_allergies,
@@ -110,18 +122,23 @@ def student_dashboard():
     return render_template("student_dashboard.html", student=student, visits=visits)
 
 
-
-
 @app.route("/get_student_info/<int:student_id>")
 def get_student_info(student_id):
     conn = get_db()
     student = conn.execute("SELECT * FROM students WHERE id=?", (student_id,)).fetchone()
-    visits = conn.execute("SELECT * FROM clinic_visits WHERE student_id=? ORDER BY time_in DESC", (student_id,)).fetchall()
+    # Joined with nurses table to show who encoded the record
+    visits = conn.execute("""
+        SELECT clinic_visits.*, nurses.full_name as nurse_name 
+        FROM clinic_visits 
+        LEFT JOIN nurses ON clinic_visits.nurse_id = nurses.id 
+        WHERE student_id=? ORDER BY time_in DESC
+    """, (student_id,)).fetchall()
     conn.close()
 
     return {
         "id": student["id"],
         "full_name": student["full_name"],
+        "student_number": student["student_number"],
         "rfid_uid": student["rfid_uid"],
         "address": student["address"],
         "age": student["age"],
@@ -135,16 +152,52 @@ def get_student_info(student_id):
         "visits": [dict(v) for v in visits]
     }
 
+# Search by RFID for the scanner
+@app.route("/get_student_by_rfid/<rfid_uid>")
+def get_student_by_rfid(rfid_uid):
+    conn = get_db()
+    student = conn.execute("SELECT * FROM students WHERE rfid_uid=?", (rfid_uid,)).fetchone()
+    if student:
+        conn.close()
+        return get_student_info(student["id"])
+    conn.close()
+    return {"error": "RFID not found"}, 404
+
+# NEW: Search by Student Number
+@app.route("/get_student_by_number/<student_num>")
+def get_student_by_number(student_num):
+    conn = get_db()
+    student = conn.execute("SELECT * FROM students WHERE student_number=?", (student_num,)).fetchone()
+    if student:
+        conn.close()
+        return get_student_info(student["id"])
+    conn.close()
+    return {"error": "Student Number not found"}, 404
 
 
+@app.route("/add_visit", methods=["POST"])
+def add_visit():
+    if session.get("role") != "nurse":
+        return redirect(url_for("login"))
 
+    student_id = request.form["student_id"]
+    temperature = request.form["temperature"]
+    complaint = request.form["complaint"]
+    diagnosis = request.form["diagnosis"]
+    medicine = request.form["medicine"]
+    nurse_id = session.get("user_id")  # Uses the logged-in nurse's ID
+    time_in = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO clinic_visits
+        (student_id, nurse_id, temperature, complaint, diagnosis, medicine, time_in)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (student_id, nurse_id, temperature, complaint, diagnosis, medicine, time_in))
+    conn.commit()
+    conn.close()
 
-
-
-
-
-
+    return redirect(url_for("nurse_dashboard"))
 
 
 # ================= LOGOUT =================

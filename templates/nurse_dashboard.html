@@ -1,242 +1,358 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nurse Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nurse Dashboard - CCC Clinic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f6f8;
+            margin: 0; padding: 0;
+        }
+        header {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        header img {
+            height: 50px;
+            margin-right: 1rem;
+        }
+        header h1 {
+            font-size: 1.8rem;
+            margin: 0;
+        }
+        .logout-btn {
+            background: #f97316;
+            border: none;
+            padding: 0.5rem 1rem;
+            color: white;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .logout-btn:hover { background: #ea580c; }
 
-<style>
-body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f4f6f8;
-    margin: 0; padding: 0;
-}
-header {
-    background-color: #1e3a8a; /* Matching student theme */
-    color: white;
-    padding: 1rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-}
-header img {
-    height: 50px;
-    margin-right: 1rem;
-}
-header h1 {
-    font-size: 1.8rem;
-    margin: 0;
-}
-.logout-btn {
-    background: #f97316;
-    border: none;
-    padding: 0.5rem 1rem;
-    color: white;
-    font-weight: bold;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: 0.3s;
-}
-.logout-btn:hover { background: #ea580c; }
+        /* Summary cards */
+        .summary-cards {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 2rem;
+            flex-wrap: wrap;
+        }
+        .card {
+            background: white;
+            flex: 1;
+            min-width: 200px;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .card i {
+            font-size: 2rem;
+            color: #1e3a8a;
+        }
 
-/* Summary cards */
-.summary-cards {
-    display: flex;
-    gap: 1rem;
-    margin: 1rem 2rem;
-    flex-wrap: wrap;
-}
-.card {
-    background: white;
-    flex: 1;
-    min-width: 200px;
-    padding: 1rem;
-    border-radius: 10px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-}
-.card i {
-    font-size: 2rem;
-    color: #1e3a8a;
-}
+        /* Table Styling */
+        table {
+            width: 96%;
+            margin: 1rem 2%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+        th {
+            background-color: #1e3a8a;
+            color: white;
+        }
+        tr:hover { background-color: #f1f5f9; cursor: pointer; }
 
-/* Student Table */
-table {
-    width: 96%;
-    margin: 1rem 2%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-}
-th, td {
-    padding: 0.75rem 1rem;
-    text-align: left;
-}
-th {
-    background-color: #1e3a8a;
-    color: white;
-    font-weight: 500;
-}
-tr:hover { background-color: #f1f5f9; cursor: pointer; }
+        /* Floating Action Button (FAB) */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            background-color: #16a34a;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            cursor: pointer;
+            z-index: 999;
+            border: none;
+            transition: 0.3s;
+        }
+        .fab:hover { transform: scale(1.1); background-color: #15803d; }
 
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 999;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    overflow: auto;
-    background: rgba(0,0,0,0.5);
-    transition: opacity 0.3s;
-}
-.modal-content {
-    background-color: #fff;
-    margin: 5% auto;
-    padding: 2rem;
-    border-radius: 10px;
-    width: 80%;
-    max-width: 800px;
-    position: relative;
-    transition: transform 0.3s;
-}
-.close {
-    color: #aaa;
-    position: absolute;
-    top: 1rem;
-    right: 1.5rem;
-    font-size: 2rem;
-    font-weight: bold;
-    cursor: pointer;
-}
-.close:hover { color: #000; }
-.visit-history {
-    margin-top: 1rem;
-    border-top: 1px solid #ddd;
-    padding-top: 1rem;
-}
-.visit-history h3 { margin-top: 0; }
-</style>
+        /* Modal Logic */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+        }
+        .close {
+            position: absolute;
+            top: 1rem; right: 1.5rem;
+            font-size: 2rem; cursor: pointer; color: #aaa;
+        }
+
+        /* Dual Method Tabs */
+        .tab-container {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+        }
+        .tab-link {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #666;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-link.active {
+            color: #1e3a8a;
+            border-bottom-color: #1e3a8a;
+        }
+        .tab-content { display: none; padding: 20px; text-align: center; }
+        .tab-content.active { display: block; }
+
+        .search-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        /* Record Form */
+        .visit-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .full-width { grid-column: span 2; }
+        .visit-form-grid input {
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+        }
+        .btn-save {
+            background: #1e3a8a;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
 
 <header>
     <div style="display:flex; align-items:center;">
-        <img src="/static/logo.png" alt="School Logo">
-        <h1>Cainta Catholic College Clinic</h1>
+        <h1>University of Perpetual Help System Laguna Clinic</h1>
     </div>
-    <form action="{{ url_for('logout') }}">
-        <button class="logout-btn">Logout</button>
-    </form>
+    <div style="display:flex; align-items:center; gap: 20px;">
+        <span>Welcome, <strong>{{ nurse['full_name'] }}</strong></span>
+        <form action="{{ url_for('logout') }}">
+            <button class="logout-btn">Logout</button>
+        </form>
+    </div>
 </header>
 
 <div class="summary-cards">
     <div class="card"><i class="fas fa-user-graduate"></i><div><strong>{{ total_students }}</strong><br>Total Students</div></div>
     <div class="card"><i class="fas fa-thermometer-half"></i><div><strong>{{ total_visits_today }}</strong><br>Visits Today</div></div>
     <div class="card"><i class="fas fa-allergies"></i><div><strong>{{ students_with_allergies }}</strong><br>Allergies</div></div>
-    <div class="card"><i class="fas fa-heartbeat"></i><div><strong>{{ students_with_medical_conditions }}</strong><br>Medical Conditions</div></div>
+    <div class="card"><i class="fas fa-heartbeat"></i><div><strong>{{ students_with_medical_conditions }}</strong><br>Conditions</div></div>
 </div>
 
-<table id="studentsTable">
+<table>
     <thead>
         <tr>
             <th>ID</th>
             <th>Full Name</th>
             <th>Grade</th>
             <th>Section</th>
-            <th>Allergies</th>
-            <th>Medical Condition</th>
             <th>Last Visit</th>
         </tr>
     </thead>
     <tbody>
         {% for student in students %}
-        <tr onclick="openModal({{ student['id'] }})">
-            <td>{{ student['id'] }}</td>
+        <tr onclick="openStudentById({{ student['id'] }})">
+            <td>{{ student['student_number'] }}</td>
             <td>{{ student['full_name'] }}</td>
             <td>{{ student['grade'] }}</td>
             <td>{{ student['section'] }}</td>
-            <td>{{ student['allergies'] }}</td>
-            <td>{{ student['medical_condition'] }}</td>
-            <td>{{ student['id'] | get_last_visit }}</td>
+            <td>{{ student['last_visit'] }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 
-<!-- Modal -->
-<div id="studentModal" class="modal">
-    <div class="modal-content" id="modalContent">
+<button class="fab" onclick="openAddModal()"><i class="fas fa-plus"></i></button>
+
+<div id="recordModal" class="modal">
+    <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
-        <div id="modalBody">
-            <!-- Filled dynamically -->
+        <h2>Add Student Record</h2>
+
+        <div class="tab-container">
+            <div class="tab-link active" onclick="switchTab(event, 'rfid-method')">Method 1: RFID Scan</div>
+            <div class="tab-link" onclick="switchTab(event, 'manual-method')">Method 2: Student Number</div>
         </div>
+
+        <div id="rfid-method" class="tab-content active">
+            <i class="fas fa-id-card" style="font-size: 4rem; color: #1e3a8a; margin-bottom: 10px;"></i>
+            <p>Ready to Scan... Tap tag on 125KHz/13.56MHz Reader</p>
+            <input type="text" id="rfidScannerInput" class="search-input" placeholder="Waiting for scan..." onchange="fetchByRfid(this.value)" autofocus>
+        </div>
+
+        <div id="manual-method" class="tab-content">
+            <p>Type the Student ID Number manually</p>
+            <input type="text" id="manualIdInput" class="search-input" placeholder="e.g. 2026-0001">
+            <br>
+            <button class="btn-save" onclick="fetchByStudentNumber()">Search Student</button>
+        </div>
+
+        <div id="dynamicFormArea" style="display:none; margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px;">
+            </div>
     </div>
 </div>
 
 <script>
-function openModal(studentId){
-    fetch('/get_student_info/' + studentId)
-    .then(response => response.json())
-    .then(data => {
-        let body = `
-            <h2>${data.full_name}</h2>
-            <p><strong>ID:</strong> ${data.id}</p>
-            <p><strong>RFID:</strong> ${data.rfid_uid}</p>
-            <p><strong>Address:</strong> ${data.address}</p>
-            <p><strong>Age:</strong> ${data.age}</p>
-            <p><strong>Grade:</strong> ${data.grade} - ${data.section}</p>
-            <p><strong>Allergies:</strong> ${data.allergies}</p>
-            <p><strong>Medical Condition:</strong> ${data.medical_condition}</p>
-            <p><strong>Parent Name:</strong> ${data.parent_name}</p>
-            <p><strong>Contact:</strong> ${data.parent_contact_number}</p>
-            <p><strong>Email:</strong> ${data.parent_email}</p>
+    const modal = document.getElementById('recordModal');
+    const rfidInput = document.getElementById('rfidScannerInput');
+    const formArea = document.getElementById('dynamicFormArea');
 
-            <div class="visit-history">
-                <h3>Visit History</h3>
-                <table style="width:100%;border-collapse:collapse;">
-                    <thead>
-                        <tr><th>Temp</th><th>Complaint</th><th>Diagnosis</th><th>Medicine</th><th>Time In</th></tr>
-                    </thead>
-                    <tbody>
-                        ${data.visits.map(v => `
-                            <tr>
-                                <td>${v.temperature}</td>
-                                <td>${v.complaint}</td>
-                                <td>${v.diagnosis}</td>
-                                <td>${v.medicine}</td>
-                                <td>${v.time_in}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+    function openAddModal() {
+        modal.style.display = 'block';
+        formArea.style.display = 'none';
+        rfidInput.value = "";
+        rfidInput.focus();
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    function switchTab(evt, methodName) {
+        let contents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < contents.length; i++) contents[i].className = contents[i].className.replace(" active", "");
+        
+        let links = document.getElementsByClassName("tab-link");
+        for (let i = 0; i < links.length; i++) links[i].className = links[i].className.replace(" active", "");
+
+        document.getElementById(methodName).className += " active";
+        evt.currentTarget.className += " active";
+
+        if(methodName === 'rfid-method') rfidInput.focus();
+    }
+
+    function fetchByRfid(uid) {
+        if(!uid) return;
+        fetch(`/get_student_by_rfid/${uid}`)
+            .then(res => res.json())
+            .then(data => data.error ? alert(data.error) : renderVisitForm(data));
+    }
+
+    function fetchByStudentNumber() {
+        let num = document.getElementById('manualIdInput').value;
+        if(!num) return;
+        fetch(`/get_student_by_number/${num}`)
+            .then(res => res.json())
+            .then(data => data.error ? alert(data.error) : renderVisitForm(data));
+    }
+
+    function openStudentById(id) {
+        fetch(`/get_student_info/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                openAddModal();
+                renderVisitForm(data);
+            });
+    }
+
+    function renderVisitForm(data) {
+        formArea.style.display = 'block';
+        formArea.innerHTML = `
+            <div style="background: #eef2ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left;">
+                <h3 style="margin:0;">${data.full_name}</h3>
+                <p style="margin:5px 0;">Grade ${data.grade} - ${data.section} | <strong>Allergies:</strong> <span style="color:red;">${data.allergies}</span></p>
+                <p style="margin:0; font-size:0.9rem;"><strong>Conditions:</strong> ${data.medical_condition}</p>
+            </div>
+            
+            <form action="/add_visit" method="POST" class="visit-form-grid">
+                <input type="hidden" name="student_id" value="${data.id}">
+                <input type="number" step="0.1" name="temperature" placeholder="Temp (°C)" required>
+                <input type="text" name="complaint" placeholder="Complaint" required>
+                <input type="text" name="diagnosis" placeholder="Diagnosis" class="full-width">
+                <input type="text" name="medicine" placeholder="Medicine Given" class="full-width">
+                <button type="submit" class="btn-save full-width">Save Visit Record</button>
+            </form>
+
+            <div style="margin-top:20px; text-align:left;">
+                <h4>Recent Visit History</h4>
+                <div style="max-height: 150px; overflow-y:auto; border: 1px solid #ddd; border-radius:5px;">
+                    <table style="width:100%; font-size: 0.9rem; margin:0; box-shadow:none;">
+                        <thead style="position: sticky; top: 0;">
+                            <tr><th>Date</th><th>Complaint</th><th>Nurse</th></tr>
+                        </thead>
+                        <tbody>
+                            ${data.visits.map(v => `
+                                <tr>
+                                    <td>${v.time_in}</td>
+                                    <td>${v.complaint}</td>
+                                    <td>${v.nurse_name || 'System'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         `;
-        document.getElementById('modalBody').innerHTML = body;
-        document.getElementById('studentModal').style.display = 'block';
-    });
-}
-
-function closeModal(){
-    document.getElementById('studentModal').style.display = 'none';
-}
-window.onclick = function(event) {
-    if(event.target == document.getElementById('studentModal')){
-        closeModal();
     }
-}
 </script>
 </body>
 </html>

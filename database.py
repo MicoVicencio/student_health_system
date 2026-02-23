@@ -8,7 +8,6 @@ def create_database():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    # ================= USERS TABLE =================
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,7 +18,6 @@ def create_database():
     )
     """)
 
-    # ================= STUDENTS TABLE =================
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS students (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,73 +36,49 @@ def create_database():
     )
     """)
 
-    # ================= VISITS TABLE =================
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS clinic_visits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id INTEGER,
+        nurse_id INTEGER,
         temperature REAL,
         complaint TEXT,
         diagnosis TEXT,
         medicine TEXT,
         time_in TEXT,
-        FOREIGN KEY(student_id) REFERENCES students(id)
+        FOREIGN KEY(student_id) REFERENCES students(id),
+        FOREIGN KEY(nurse_id) REFERENCES nurses(id)
     )
     """)
 
-    # ================= SAMPLE STUDENT =================
     cursor.execute("""
-    INSERT OR IGNORE INTO students
-    (id, rfid_uid, student_number, full_name, address, age, grade, section,
-     allergies, medical_condition, parent_name,
-     parent_contact_number, parent_email)
-    VALUES
-    (1, 'RFID123456', '2024-0001', 'Juan Dela Cruz',
-     'Laguna, Philippines',
-     18, 'Grade 12', 'STEM-A',
-     'Peanuts',
-     'Asthma',
-     'Maria Dela Cruz',
-     '09123456789',
-     'maria@gmail.com')
+    CREATE TABLE IF NOT EXISTS nurses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        full_name TEXT,
+        address TEXT,
+        contact_number TEXT,
+        username TEXT UNIQUE,
+        password TEXT
+    )
     """)
 
-    # ================= STUDENT LOGIN =================
-    username = "juandelacruz"
-    password = generate_password_hash("2024-0001")
+    # --- New Sample Data ---
 
-    cursor.execute("""
-    INSERT OR IGNORE INTO users
-    (id, username, password, role, linked_student_id)
-    VALUES
-    (2, ?, ?, 'student', 1)
-    """, (username, password))
+    # Damon Salvatore - HUMSS-B
+    cursor.execute("INSERT OR IGNORE INTO students (id, rfid_uid, student_number, full_name, address, age, grade, section, allergies, medical_condition, parent_name, parent_contact_number, parent_email) VALUES (2, 'RFID222', '2024-0002', 'Damon Salvatore', 'Mystic Falls', 18, 'Grade 12', 'HUMSS-B', 'None', 'None', 'Giuseppe Salvatore', '09112223334', 'damon@salvatore.com')")
+    cursor.execute("INSERT OR IGNORE INTO users (username, password, role, linked_student_id) VALUES ('damons', ?, 'student', 2)", (generate_password_hash("password123"),))
 
-    # ================= NURSE LOGIN =================
-    cursor.execute("""
-    INSERT OR IGNORE INTO users
-    (id, username, password, role, linked_student_id)
-    VALUES
-    (1, 'nurse1', ?, 'nurse', NULL)
-    """, (generate_password_hash("nurse123"),))
+    # Elena Gilbert - STEM-B
+    cursor.execute("INSERT OR IGNORE INTO students (id, rfid_uid, student_number, full_name, address, age, grade, section, allergies, medical_condition, parent_name, parent_contact_number, parent_email) VALUES (3, 'RFID333', '2024-0003', 'Elena Gilbert', 'Gilbert House', 17, 'Grade 11', 'STEM-B', 'None', 'None', 'Miranda Gilbert', '09998887776', 'elena@gilbert.com')")
+    cursor.execute("INSERT OR IGNORE INTO users (username, password, role, linked_student_id) VALUES ('elenag', ?, 'student', 3)", (generate_password_hash("password123"),))
 
-    # ================= DUMMY CLINIC VISITS =================
-    # Generate 3 sample visits for Juan Dela Cruz
-    visits = [
-        (1, 37.2, "Headache and mild fever", "Common Cold", "Paracetamol", (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d %H:%M:%S")),
-        (1, 36.8, "Asthma attack during PE class", "Asthma", "Inhaler", (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d %H:%M:%S")),
-        (1, 37.5, "Allergic reaction to peanuts", "Allergy", "Antihistamine", (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S"))
-    ]
-
-    cursor.executemany("""
-    INSERT OR IGNORE INTO clinic_visits
-    (student_id, temperature, complaint, diagnosis, medicine, time_in)
-    VALUES (?, ?, ?, ?, ?, ?)
-    """, visits)
+    # Nurse Bonnie Bennett
+    # Use ID 2 for BOTH tables so they link correctly
+    cursor.execute("INSERT OR IGNORE INTO nurses (id, full_name, username) VALUES (2, 'Bonnie Bennett', 'nurse_bonnie')")
+    cursor.execute("INSERT OR IGNORE INTO users (id, username, password, role) VALUES (2, 'nurse_bonnie', ?, 'nurse')", (generate_password_hash("nurse123"),))
 
     conn.commit()
     conn.close()
-    print("Database updated successfully with RFID field and dummy visits.")
 
 if __name__ == "__main__":
     create_database()
