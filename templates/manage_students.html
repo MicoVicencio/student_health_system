@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Students - CCC Clinic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Roboto', sans-serif; background-color: #f4f6f8; margin: 0; }
+        header { background-color: #1e3a8a; color: white; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+        nav { background: #fff; padding: 0.8rem 2rem; display: flex; gap: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        nav a { text-decoration: none; color: #64748b; font-weight: 500; border-bottom: 3px solid transparent; padding-bottom: 5px; }
+        nav a.active { color: #1e3a8a; border-bottom: 3px solid #1e3a8a; }
+
+        .container { padding: 2rem; }
+        .controls { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; }
+        
+        .search-bar { flex: 1; position: relative; }
+        .search-bar input { width: 100%; padding: 12px 12px 12px 40px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 1rem; }
+        .search-bar i { position: absolute; left: 15px; top: 15px; color: #94a3b8; }
+
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #f1f5f9; }
+        th { background: #f8fafc; color: #1e3a8a; font-weight: bold; }
+        .clickable-row { cursor: pointer; transition: 0.2s; }
+        .clickable-row:hover { background: #f1f5f9; }
+
+        .fab-add { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background: #16a34a; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: none; cursor: pointer; z-index: 100; transition: 0.3s; }
+        .fab-add:hover { transform: scale(1.1); }
+
+        /* Modal & Profile Layout */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
+        .modal-content { background: white; margin: 2% auto; padding: 2rem; border-radius: 12px; width: 90%; max-width: 850px; max-height: 90vh; overflow-y: auto; position: relative; }
+        
+        /* Tabs for Adding */
+        .tab-container { display: flex; background: #f1f5f9; padding: 5px; border-radius: 10px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; cursor: pointer; font-weight: bold; color: #64748b; border-radius: 8px; }
+        .tab-btn.active { background: white; color: #1e3a8a; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        /* The design you liked: Blue Section Titles & Info Grids */
+        .section-title { background: #f1f5f9; padding: 10px; border-left: 5px solid #1e3a8a; margin: 20px 0 10px 0; font-weight: bold; color: #1e3a8a; display: flex; align-items: center; gap: 10px;}
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .info-item { padding: 10px; background: #fff; border: 1px solid #edf2f7; border-radius: 6px; }
+        .info-item label { display: block; color: #64748b; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+        .info-item span { font-size: 1rem; color: #1e3a8a; font-weight: 500; word-break: break-word; }
+
+        /* Form Styling */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-row { grid-column: span 2; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; color: #334155; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+
+        /* Import Sample UI */
+        .sample-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .sample-table-wrapper { overflow-x: auto; }
+        .sample-table { width: 100%; font-size: 0.75rem; border-collapse: collapse; white-space: nowrap; }
+        .sample-table th { background: #e2e8f0; padding: 8px; border: 1px solid #cbd5e1; color: #475569; }
+        
+        #importConfirmation { display: none; background: #ecfdf5; border: 1px solid #10b981; padding: 15px; border-radius: 8px; margin-top: 15px; color: #065f46; }
+
+        .modal-footer { margin-top: 30px; display: flex; gap: 15px; justify-content: flex-end; padding-top: 20px; border-top: 1px solid #eee; }
+        .btn { padding: 12px 25px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .btn-edit { background: #1e3a8a; color: white; }
+        .btn-delete { background: #ef4444; color: white; }
+        .btn-save { background: #16a34a; color: white; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>UPH SL Clinic Management</h1>
+    <span>Welcome, <strong>{{ nurse['full_name'] }}</strong></span>
+</header>
+
+<nav>
+    <a href="{{ url_for('nurse_dashboard') }}">Home</a>
+    <a href="{{ url_for('manage_students') }}" class="active">Manage Students</a>
+    <a href="{{ url_for('visit_history') }}">Visit History</a>
+</nav>
+
+<div class="container">
+    <div class="controls">
+        <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="mainSearch" placeholder="Search by Name, ID, Section, or RFID..." oninput="filterData()">
+        </div>
+        <button id="multiDeleteBtn" class="btn btn-delete" style="display:none;" onclick="deleteSelected()">Delete Selected</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 40px;"><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
+                <th>Student Number</th>
+                <th>Full Name</th>
+                <th>Section</th>
+            </tr>
+        </thead>
+        <tbody id="studentBody">
+            {% for student in students %}
+            <tr class="clickable-row" onclick="viewProfile({{ student['id'] }})" data-search="{{ student['full_name'] }} {{ student['student_number'] }} {{ student['section'] }} {{ student['rfid_uid'] }}">
+                <td onclick="event.stopPropagation()"><input type="checkbox" class="student-checkbox" value="{{ student['id'] }}" onclick="updateDeleteBtn()"></td>
+                <td><strong>{{ student['student_number'] }}</strong></td>
+                <td>{{ student['full_name'] }}</td>
+                <td>{{ student['section'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<button class="fab-add" onclick="openAddModal()"><i class="fas fa-plus"></i></button>
+
+<div id="mainModal" class="modal">
+    <div class="modal-content">
+        <span onclick="closeModal()" style="float:right; cursor:pointer; font-size: 28px;">&times;</span>
+        <h2 id="modalTitle">Student Information</h2>
+        
+        <div id="tabContainer" class="tab-container" style="display:none;">
+            <button class="tab-btn active" id="tabManualBtn" onclick="switchTab('manual')">Manual Form</button>
+            <button class="tab-btn" id="tabBulkBtn" onclick="switchTab('bulk')">Bulk Import (Excel/CSV)</button>
+        </div>
+
+        <div id="viewSection">
+            <div class="section-title"><i class="fas fa-info-circle"></i> Personal Information</div>
+            <div class="info-grid" id="profile_personal"></div>
+
+            <div class="section-title"><i class="fas fa-briefcase-medical"></i> Medical Records</div>
+            <div class="info-grid" id="profile_medical"></div>
+
+            <div class="section-title"><i class="fas fa-users"></i> Emergency / Parent Contact</div>
+            <div class="info-grid" id="profile_parent"></div>
+
+            <div class="modal-footer">
+                <button class="btn btn-delete" onclick="deleteCurrentStudent()"><i class="fas fa-trash-alt"></i> Delete Student</button>
+                <button class="btn btn-edit" onclick="enableEditMode()"><i class="fas fa-user-edit"></i> Edit Info</button>
+            </div>
+        </div>
+
+        <div id="formSection" style="display:none;">
+            <form id="studentForm" action="/save_student" method="POST">
+                <input type="hidden" name="id" id="f_id">
+                <div class="form-grid">
+                    <div class="form-group"><label>RFID UID</label><input type="text" name="rfid_uid" id="f_rfid"></div>
+                    <div class="form-group"><label>Student Number</label><input type="text" name="student_number" id="f_num" required></div>
+                    <div class="form-group full-row"><label>Full Name</label><input type="text" name="full_name" id="f_name" required></div>
+                    <div class="form-group full-row"><label>Address</label><input type="text" name="address" id="f_address"></div>
+                    <div class="form-group"><label>Age</label><input type="number" name="age" id="f_age"></div>
+                    <div class="form-group"><label>Grade</label><input type="text" name="grade" id="f_grade" required></div>
+                    <div class="form-group"><label>Section</label><input type="text" name="section" id="f_section" required></div>
+                    <div class="form-group full-row"><label>Allergies</label><textarea name="allergies" id="f_allergies" rows="1"></textarea></div>
+                    <div class="form-group full-row"><label>Medical Condition</label><textarea name="medical_condition" id="f_conditions" rows="1"></textarea></div>
+                    <div class="form-group"><label>Parent Name</label><input type="text" name="parent_name" id="f_pname"></div>
+                    <div class="form-group"><label>Parent Contact #</label><input type="text" name="parent_contact_number" id="f_pcontact"></div>
+                    <div class="form-group full-row"><label>Parent Email</label><input type="email" name="parent_email" id="f_pemail"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-save">Save Data</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="bulkSection" style="display:none;">
+            <p>Upload your <strong>.xlsx</strong> or <strong>.csv</strong> file. Use these exact headers:</p>
+            <div class="sample-box">
+                <div class="sample-table-wrapper">
+                    <table class="sample-table">
+                        <thead><tr><th>rfid_uid</th><th>student_number</th><th>full_name</th><th>address</th><th>age</th><th>grade</th><th>section</th><th>allergies</th><th>medical_condition</th><th>parent_name</th><th>parent_contact_number</th><th>parent_email</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+            <input type="file" id="bulkFile" accept=".csv, .xlsx, .xls" onchange="handleFileSelect(event)">
+            <div id="importConfirmation">
+                <i class="fas fa-check-circle"></i> <span id="confirmMessage"></span>
+                <br><br>
+                <button class="btn btn-save" style="width:100%" onclick="processBulkImport()">Confirm & Import Now</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+    let activeStudentId = null;
+    let pendingBulkData = [];
+
+    function filterData() {
+        const q = document.getElementById('mainSearch').value.toLowerCase();
+        document.querySelectorAll('#studentBody tr').forEach(r => {
+            r.style.display = r.getAttribute('data-search').toLowerCase().includes(q) ? "" : "none";
+        });
+    }
+
+    // VIEW PROFILE
+    function viewProfile(id) {
+        activeStudentId = id;
+        fetch(`/get_student_info/${id}`).then(res => res.json()).then(data => {
+            document.getElementById('profile_personal').innerHTML = `
+                <div class="info-item"><label>Student Number</label><span>${data.student_number}</span></div>
+                <div class="info-item"><label>Full Name</label><span>${data.full_name}</span></div>
+                <div class="info-item"><label>RFID</label><span>${data.rfid_uid || 'None'}</span></div>
+                <div class="info-item"><label>Grade / Section</label><span>${data.grade} - ${data.section}</span></div>
+                <div class="info-item"><label>Age</label><span>${data.age || 'N/A'}</span></div>
+                <div class="info-item" style="grid-column: span 2;"><label>Home Address</label><span>${data.address || 'N/A'}</span></div>
+            `;
+            document.getElementById('profile_medical').innerHTML = `
+                <div class="info-item" style="grid-column: span 2;"><label>Allergies</label><span style="color:#ef4444;">${data.allergies || 'None'}</span></div>
+                <div class="info-item" style="grid-column: span 2;"><label>Medical Conditions</label><span>${data.medical_condition || 'None'}</span></div>
+            `;
+            document.getElementById('profile_parent').innerHTML = `
+                <div class="info-item"><label>Parent Name</label><span>${data.parent_name || 'N/A'}</span></div>
+                <div class="info-item"><label>Contact</label><span>${data.parent_contact_number || 'N/A'}</span></div>
+                <div class="info-item" style="grid-column: span 2;"><label>Email</label><span>${data.parent_email || 'N/A'}</span></div>
+            `;
+            
+            // Map data to hidden form for editing
+            document.getElementById('f_id').value = data.id;
+            document.getElementById('f_name').value = data.full_name;
+            document.getElementById('f_num').value = data.student_number;
+            document.getElementById('f_rfid').value = data.rfid_uid || "";
+            document.getElementById('f_age').value = data.age || "";
+            document.getElementById('f_grade').value = data.grade;
+            document.getElementById('f_section').value = data.section;
+            document.getElementById('f_address').value = data.address || "";
+            document.getElementById('f_allergies').value = data.allergies || "";
+            document.getElementById('f_conditions').value = data.medical_condition || "";
+            document.getElementById('f_pname').value = data.parent_name || "";
+            document.getElementById('f_pcontact').value = data.parent_contact_number || "";
+            document.getElementById('f_pemail').value = data.parent_email || "";
+
+            showSection('view');
+            document.getElementById('modalTitle').innerText = "Student Profile";
+            document.getElementById('tabContainer').style.display = "none";
+            document.getElementById('mainModal').style.display = "block";
+        });
+    }
+
+    function openAddModal() {
+        document.getElementById('studentForm').reset();
+        document.getElementById('f_id').value = "";
+        document.getElementById('modalTitle').innerText = "Register New Student";
+        document.getElementById('tabContainer').style.display = "flex";
+        switchTab('manual');
+        document.getElementById('mainModal').style.display = "block";
+    }
+
+    function showSection(type) {
+        document.getElementById('viewSection').style.display = type === 'view' ? 'block' : 'none';
+        document.getElementById('formSection').style.display = type === 'form' ? 'block' : 'none';
+        document.getElementById('bulkSection').style.display = type === 'bulk' ? 'block' : 'none';
+    }
+
+    function switchTab(type) {
+        showSection(type === 'manual' ? 'form' : 'bulk');
+        document.getElementById('tabManualBtn').classList.toggle('active', type === 'manual');
+        document.getElementById('tabBulkBtn').classList.toggle('active', type === 'bulk');
+    }
+
+    function enableEditMode() {
+        showSection('form');
+        document.getElementById('modalTitle').innerText = "Edit Student Information";
+    }
+
+    function closeModal() { document.getElementById('mainModal').style.display = 'none'; }
+
+    // BULK LOGIC
+    function handleFileSelect(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const data = new Uint8Array(evt.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            pendingBulkData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            document.getElementById('confirmMessage').innerText = `Excel Validated: ${pendingBulkData.length} students found.`;
+            document.getElementById('importConfirmation').style.display = 'block';
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function processBulkImport() {
+        fetch('/bulk_import_students', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(pendingBulkData)
+        }).then(() => location.reload());
+    }
+
+    function deleteCurrentStudent() {
+        if(confirm("Delete this record?")) {
+            fetch('/delete_students', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ids: [activeStudentId]})
+            }).then(() => location.reload());
+        }
+    }
+
+    function toggleAll(source) {
+        document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = source.checked);
+        updateDeleteBtn();
+    }
+
+    function updateDeleteBtn() {
+        const count = document.querySelectorAll('.student-checkbox:checked').length;
+        document.getElementById('multiDeleteBtn').style.display = count > 0 ? "block" : "none";
+        document.getElementById('multiDeleteBtn').innerHTML = `<i class="fas fa-trash"></i> Delete (${count})`;
+    }
+
+    function deleteSelected() {
+        const ids = Array.from(document.querySelectorAll('.student-checkbox:checked')).map(cb => cb.value);
+        if(confirm(`Delete ${ids.length} students?`)) {
+            fetch('/delete_students', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ids: ids})
+            }).then(() => location.reload());
+        }
+    }
+</script>
+</body>
+</html>

@@ -51,12 +51,29 @@ def login():
 
 
 # ================= NURSE DASHBOARD =================
+# ================= NURSE - HOME (GRAPHS) =================
 @app.route("/nurse_dashboard")
 def nurse_dashboard():
     if session.get("role") != "nurse":
         return redirect(url_for("login"))
-
+    
     conn = get_db()
+    
+    # 1. Visitation per Day (Last 7 Days)
+    visits_per_day = conn.execute("""
+        SELECT date(time_in) as date, COUNT(*) as count 
+        FROM clinic_visits 
+        GROUP BY date(time_in) 
+        ORDER BY date DESC LIMIT 7
+    """).fetchall()
+    
+    # 2. Visits per Grade Level
+    visits_per_grade = conn.execute("""
+        SELECT students.grade, COUNT(*) as count 
+        FROM clinic_visits 
+        JOIN students ON clinic_visits.student_id = students.id 
+        GROUP BY students.grade
+    """).fetchall()
 
     # Statistics for the cards
     today = datetime.now().strftime("%Y-%m-%d")
@@ -64,36 +81,91 @@ def nurse_dashboard():
     total_visits_today = conn.execute("SELECT COUNT(*) FROM clinic_visits WHERE time_in LIKE ?", (f"{today}%",)).fetchone()[0]
     students_with_allergies = conn.execute("SELECT COUNT(*) FROM students WHERE allergies != '' AND allergies IS NOT NULL").fetchone()[0]
     students_with_medical_conditions = conn.execute("SELECT COUNT(*) FROM students WHERE medical_condition != '' AND medical_condition IS NOT NULL").fetchone()[0]
-
-    # Fetch nurse info to welcome
-    # IMPORTANT: session["user_id"] must match the ID in the nurses table
+    
     nurse_id = session.get("user_id")
     nurse = conn.execute("SELECT * FROM nurses WHERE id=?", (nurse_id,)).fetchone()
-
-    # Fetch all students
-    students = conn.execute("SELECT * FROM students").fetchall()
-    students_with_last_visit = []
-    for s in students:
-        last_visit = conn.execute(
-            "SELECT time_in FROM clinic_visits WHERE student_id=? ORDER BY time_in DESC LIMIT 1",
-            (s["id"],)
-        ).fetchone()
-        s_dict = dict(s)
-        s_dict['last_visit'] = last_visit['time_in'] if last_visit else "No visits"
-        students_with_last_visit.append(s_dict)
-
     conn.close()
 
     return render_template(
         "nurse_dashboard.html",
         nurse=nurse,
-        students=students_with_last_visit,
         total_students=total_students,
         total_visits_today=total_visits_today,
         students_with_allergies=students_with_allergies,
-        students_with_medical_conditions=students_with_medical_conditions
+        students_with_medical_conditions=students_with_medical_conditions,
+        graph_days=[row['date'] for row in visits_per_day],
+        graph_day_counts=[row['count'] for row in visits_per_day],
+        graph_grades=[row['grade'] for row in visits_per_grade],
+        graph_grade_counts=[row['count'] for row in visits_per_grade]
     )
 
+# ================= MANAGE STUDENTS =================
+@app.route("/manage_students")
+def manage_students():
+    if session.get("role") != "nurse":
+        return redirect(url_for("login"))
+    conn = get_db()
+    students = conn.execute("SELECT id, student_number, full_name, section, grade, rfid_uid FROM students").fetchall()
+    nurse_id = session.get("user_id")
+    nurse = conn.execute("SELECT * FROM nurses WHERE id=?", (nurse_id,)).fetchone()
+    conn.close()
+    return render_template("manage_students.html", students=students, nurse=nurse)
+
+@app.route("/delete_students", methods=["POST"])
+def delete_students():
+    student_ids = request.json.get('ids', [])
+    conn = get_db()
+    for s_id in student_ids:
+        conn.execute("DELETE FROM students WHERE id = ?", (s_id,))
+        conn.execute("DELETE FROM users WHERE linked_student_id = ?", (s_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route("/bulk_import_students", methods=["POST"])
+def bulk_import_students():
+    data = request.json
+    conn = get_db()
+    try:
+        for row in data:
+            conn.execute("""
+                INSERT OR REPLACE INTO students 
+                (rfid_uid, student_number, full_name, address, age, grade, section, 
+                 allergies, medical_condition, parent_name, parent_contact_number, parent_email)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                row.get('rfid_uid'), row.get('student_number'), row.get('full_name'),
+                row.get('address'), row.get('age'), row.get('grade'), row.get('section'),
+                row.get('allergies'), row.get('medical_condition'), row.get('parent_name'),
+                row.get('parent_contact_number'), row.get('parent_email')
+            ))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+    finally:
+        conn.close()
+
+# ================= VISIT HISTORY =================
+@app.route("/visit_history")
+def visit_history():
+    if session.get("role") != "nurse":
+        return redirect(url_for("login"))
+    
+    conn = get_db()
+    visits = conn.execute("""
+        SELECT clinic_visits.*, students.full_name, students.student_number, nurses.full_name as nurse_name 
+        FROM clinic_visits 
+        JOIN students ON clinic_visits.student_id = students.id
+        LEFT JOIN nurses ON clinic_visits.nurse_id = nurses.id
+        ORDER BY time_in DESC
+    """).fetchall()
+    
+    nurse_id = session.get("user_id")
+    nurse = conn.execute("SELECT * FROM nurses WHERE id=?", (nurse_id,)).fetchone()
+    conn.close()
+    
+    return render_template("visit_history.html", visits=visits, nurse=nurse)
 
 # ================= STUDENT DASHBOARD =================
 @app.route("/student_dashboard")

@@ -1,0 +1,26 @@
+<nav>
+    <a href="{{ url_for('nurse_dashboard') }}">Home</a>
+    <a href="{{ url_for('manage_students') }}">Manage Students</a>
+    <a href="{{ url_for('visit_history') }}" class="active">Visit History</a>
+</nav>
+
+<div class="main-container">
+    <h2>All Clinic Visit Records</h2>
+    <table>
+        <thead>
+            <tr><th>Date/Time</th><th>Student</th><th>Complaint</th><th>Diagnosis</th><th>Medicine</th><th>Nurse</th></tr>
+        </thead>
+        <tbody>
+            {% for v in visits %}
+            <tr>
+                <td>{{ v['time_in'] }}</td>
+                <td>{{ v['full_name'] }}</td>
+                <td>{{ v['complaint'] }}</td>
+                <td>{{ v['diagnosis'] }}</td>
+                <td>{{ v['medicine'] }}</td>
+                <td>{{ v['nurse_name'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

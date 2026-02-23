@@ -6,6 +6,7 @@
     <title>Nurse Dashboard - CCC Clinic</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -21,14 +22,29 @@
             justify-content: space-between;
             box-shadow: 0 3px 6px rgba(0,0,0,0.1);
         }
-        header img {
-            height: 50px;
-            margin-right: 1rem;
+        header h1 { font-size: 1.5rem; margin: 0; }
+        
+        /* Navigation Bar */
+        nav {
+            background: #fff;
+            padding: 0.8rem 2rem;
+            display: flex;
+            gap: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        header h1 {
-            font-size: 1.8rem;
-            margin: 0;
+        nav a {
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 500;
+            transition: 0.3s;
+            border-bottom: 3px solid transparent;
+            padding-bottom: 5px;
         }
+        nav a:hover, nav a.active {
+            color: #1e3a8a;
+            border-bottom: 3px solid #1e3a8a;
+        }
+
         .logout-btn {
             background: #f97316;
             border: none;
@@ -41,11 +57,27 @@
         }
         .logout-btn:hover { background: #ea580c; }
 
+        .dashboard-content { padding: 20px; }
+
+        /* Graph Section */
+        .graph-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .graph-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+
         /* Summary cards */
         .summary-cards {
             display: flex;
             gap: 1rem;
-            margin: 1rem 2rem;
+            margin-bottom: 2rem;
             flex-wrap: wrap;
         }
         .card {
@@ -59,30 +91,7 @@
             align-items: center;
             gap: 1rem;
         }
-        .card i {
-            font-size: 2rem;
-            color: #1e3a8a;
-        }
-
-        /* Table Styling */
-        table {
-            width: 96%;
-            margin: 1rem 2%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-        }
-        th, td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-        }
-        th {
-            background-color: #1e3a8a;
-            color: white;
-        }
-        tr:hover { background-color: #f1f5f9; cursor: pointer; }
+        .card i { font-size: 2rem; color: #1e3a8a; }
 
         /* Floating Action Button (FAB) */
         .fab {
@@ -185,14 +194,15 @@
             cursor: pointer;
             font-weight: bold;
         }
+        table { width:100%; border-collapse: collapse; margin-top:10px;}
+        th, td { padding: 8px; border-bottom: 1px solid #ddd; text-align: left;}
+        th { background: #f1f5f9; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="display:flex; align-items:center;">
-        <h1>University of Perpetual Help System Laguna Clinic</h1>
-    </div>
+    <h1>UPH SL Clinic Management System</h1>
     <div style="display:flex; align-items:center; gap: 20px;">
         <span>Welcome, <strong>{{ nurse['full_name'] }}</strong></span>
         <form action="{{ url_for('logout') }}">
@@ -201,35 +211,31 @@
     </div>
 </header>
 
-<div class="summary-cards">
-    <div class="card"><i class="fas fa-user-graduate"></i><div><strong>{{ total_students }}</strong><br>Total Students</div></div>
-    <div class="card"><i class="fas fa-thermometer-half"></i><div><strong>{{ total_visits_today }}</strong><br>Visits Today</div></div>
-    <div class="card"><i class="fas fa-allergies"></i><div><strong>{{ students_with_allergies }}</strong><br>Allergies</div></div>
-    <div class="card"><i class="fas fa-heartbeat"></i><div><strong>{{ students_with_medical_conditions }}</strong><br>Conditions</div></div>
-</div>
+<nav>
+    <a href="{{ url_for('nurse_dashboard') }}" class="active">Home</a>
+    <a href="{{ url_for('manage_students') }}">Manage Students</a>
+    <a href="{{ url_for('visit_history') }}">Visit History</a>
+</nav>
 
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Full Name</th>
-            <th>Grade</th>
-            <th>Section</th>
-            <th>Last Visit</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for student in students %}
-        <tr onclick="openStudentById({{ student['id'] }})">
-            <td>{{ student['student_number'] }}</td>
-            <td>{{ student['full_name'] }}</td>
-            <td>{{ student['grade'] }}</td>
-            <td>{{ student['section'] }}</td>
-            <td>{{ student['last_visit'] }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="dashboard-content">
+    <div class="graph-container">
+        <div class="graph-card">
+            <h3 style="margin-top:0"><i class="fas fa-chart-line"></i> Daily Visitations</h3>
+            <canvas id="visitChart"></canvas>
+        </div>
+        <div class="graph-card">
+            <h3 style="margin-top:0"><i class="fas fa-chart-bar"></i> Visits by Grade Level</h3>
+            <canvas id="gradeChart"></canvas>
+        </div>
+    </div>
+
+    <div class="summary-cards">
+        <div class="card"><i class="fas fa-user-graduate"></i><div><strong>{{ total_students }}</strong><br>Total Students</div></div>
+        <div class="card"><i class="fas fa-thermometer-half"></i><div><strong>{{ total_visits_today }}</strong><br>Visits Today</div></div>
+        <div class="card"><i class="fas fa-allergies"></i><div><strong>{{ students_with_allergies }}</strong><br>Allergies</div></div>
+        <div class="card"><i class="fas fa-heartbeat"></i><div><strong>{{ students_with_medical_conditions }}</strong><br>Conditions</div></div>
+    </div>
+</div>
 
 <button class="fab" onclick="openAddModal()"><i class="fas fa-plus"></i></button>
 
@@ -237,31 +243,55 @@
     <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
         <h2>Add Student Record</h2>
-
         <div class="tab-container">
-            <div class="tab-link active" onclick="switchTab(event, 'rfid-method')">Method 1: RFID Scan</div>
-            <div class="tab-link" onclick="switchTab(event, 'manual-method')">Method 2: Student Number</div>
+            <div class="tab-link active" onclick="switchTab(event, 'rfid-method')">RFID Scan</div>
+            <div class="tab-link" onclick="switchTab(event, 'manual-method')">Student Number</div>
         </div>
-
         <div id="rfid-method" class="tab-content active">
             <i class="fas fa-id-card" style="font-size: 4rem; color: #1e3a8a; margin-bottom: 10px;"></i>
-            <p>Ready to Scan... Tap tag on 125KHz/13.56MHz Reader</p>
+            <p>Ready to Scan...</p>
             <input type="text" id="rfidScannerInput" class="search-input" placeholder="Waiting for scan..." onchange="fetchByRfid(this.value)" autofocus>
         </div>
-
         <div id="manual-method" class="tab-content">
-            <p>Type the Student ID Number manually</p>
             <input type="text" id="manualIdInput" class="search-input" placeholder="e.g. 2026-0001">
-            <br>
             <button class="btn-save" onclick="fetchByStudentNumber()">Search Student</button>
         </div>
-
-        <div id="dynamicFormArea" style="display:none; margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px;">
-            </div>
+        <div id="dynamicFormArea" style="display:none; margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px;"></div>
     </div>
 </div>
 
 <script>
+    // --- GRAPH LOGIC ---
+    const visitCtx = document.getElementById('visitChart').getContext('2d');
+    new Chart(visitCtx, {
+        type: 'line',
+        data: {
+            labels: {{ graph_days | tojson }},
+            datasets: [{
+                label: 'Visits',
+                data: {{ graph_day_counts | tojson }},
+                borderColor: '#1e3a8a',
+                tension: 0.3,
+                fill: true,
+                backgroundColor: 'rgba(30, 58, 138, 0.1)'
+            }]
+        }
+    });
+
+    const gradeCtx = document.getElementById('gradeChart').getContext('2d');
+    new Chart(gradeCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ graph_grades | tojson }},
+            datasets: [{
+                label: 'Student Visits',
+                data: {{ graph_grade_counts | tojson }},
+                backgroundColor: ['#1e3a8a', '#16a34a', '#f97316', '#ef4444', '#8b5cf6']
+            }]
+        }
+    });
+
+    // --- RETAINED MODAL SCRIPTS ---
     const modal = document.getElementById('recordModal');
     const rfidInput = document.getElementById('rfidScannerInput');
     const formArea = document.getElementById('dynamicFormArea');
@@ -273,20 +303,15 @@
         rfidInput.focus();
     }
 
-    function closeModal() {
-        modal.style.display = 'none';
-    }
+    function closeModal() { modal.style.display = 'none'; }
 
     function switchTab(evt, methodName) {
         let contents = document.getElementsByClassName("tab-content");
         for (let i = 0; i < contents.length; i++) contents[i].className = contents[i].className.replace(" active", "");
-        
         let links = document.getElementsByClassName("tab-link");
         for (let i = 0; i < links.length; i++) links[i].className = links[i].className.replace(" active", "");
-
         document.getElementById(methodName).className += " active";
         evt.currentTarget.className += " active";
-
         if(methodName === 'rfid-method') rfidInput.focus();
     }
 
@@ -305,52 +330,21 @@
             .then(data => data.error ? alert(data.error) : renderVisitForm(data));
     }
 
-    function openStudentById(id) {
-        fetch(`/get_student_info/${id}`)
-            .then(res => res.json())
-            .then(data => {
-                openAddModal();
-                renderVisitForm(data);
-            });
-    }
-
     function renderVisitForm(data) {
         formArea.style.display = 'block';
         formArea.innerHTML = `
-            <div style="background: #eef2ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left;">
-                <h3 style="margin:0;">${data.full_name}</h3>
-                <p style="margin:5px 0;">Grade ${data.grade} - ${data.section} | <strong>Allergies:</strong> <span style="color:red;">${data.allergies}</span></p>
-                <p style="margin:0; font-size:0.9rem;"><strong>Conditions:</strong> ${data.medical_condition}</p>
+            <div style="background: #eef2ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <h3>${data.full_name}</h3>
+                <p>Grade ${data.grade} - ${data.section} | <strong>Allergies:</strong> <span style="color:red;">${data.allergies}</span></p>
             </div>
-            
             <form action="/add_visit" method="POST" class="visit-form-grid">
                 <input type="hidden" name="student_id" value="${data.id}">
                 <input type="number" step="0.1" name="temperature" placeholder="Temp (°C)" required>
                 <input type="text" name="complaint" placeholder="Complaint" required>
                 <input type="text" name="diagnosis" placeholder="Diagnosis" class="full-width">
-                <input type="text" name="medicine" placeholder="Medicine Given" class="full-width">
-                <button type="submit" class="btn-save full-width">Save Visit Record</button>
+                <input type="text" name="medicine" placeholder="Medicine" class="full-width">
+                <button type="submit" class="btn-save full-width">Save Record</button>
             </form>
-
-            <div style="margin-top:20px; text-align:left;">
-                <h4>Recent Visit History</h4>
-                <div style="max-height: 150px; overflow-y:auto; border: 1px solid #ddd; border-radius:5px;">
-                    <table style="width:100%; font-size: 0.9rem; margin:0; box-shadow:none;">
-                        <thead style="position: sticky; top: 0;">
-                            <tr><th>Date</th><th>Complaint</th><th>Nurse</th></tr>
-                        </thead>
-                        <tbody>
-                            ${data.visits.map(v => `
-                                <tr>
-                                    <td>${v.time_in}</td>
-                                    <td>${v.complaint}</td>
-                                    <td>${v.nurse_name || 'System'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         `;
     }
 </script>

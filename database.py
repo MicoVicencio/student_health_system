@@ -8,6 +8,7 @@ def create_database():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
+    # 1. TABLE CREATION
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,23 +63,25 @@ def create_database():
     )
     """)
 
-    # --- New Sample Data ---
+    # 2. INSERT SAMPLE DATA
+    # Using REPLACE ensures that if the ID exists, it updates with the correct password/role
+    
+    # Stefan Salvatore - STEM-A
+    cursor.execute("REPLACE INTO students (id, rfid_uid, student_number, full_name, address, age, grade, section, allergies, medical_condition, parent_name, parent_contact_number, parent_email) VALUES (4, 'RFID444', '2024-0004', 'Stefan Salvatore', 'Mystic Falls', 17, 'Grade 11', 'STEM-A', 'None', 'None', 'Giuseppe Salvatore', '09112223334', 'stefan@salvatore.com')")
+    cursor.execute("REPLACE INTO users (id, username, password, role, linked_student_id) VALUES (4, 'stefans', ?, 'student', 4)", (generate_password_hash("password123"),))
 
-    # Damon Salvatore - HUMSS-B
-    cursor.execute("INSERT OR IGNORE INTO students (id, rfid_uid, student_number, full_name, address, age, grade, section, allergies, medical_condition, parent_name, parent_contact_number, parent_email) VALUES (2, 'RFID222', '2024-0002', 'Damon Salvatore', 'Mystic Falls', 18, 'Grade 12', 'HUMSS-B', 'None', 'None', 'Giuseppe Salvatore', '09112223334', 'damon@salvatore.com')")
-    cursor.execute("INSERT OR IGNORE INTO users (username, password, role, linked_student_id) VALUES ('damons', ?, 'student', 2)", (generate_password_hash("password123"),))
+    # Klaus Mikaelson - ABM-C
+    cursor.execute("REPLACE INTO students (id, rfid_uid, student_number, full_name, address, age, grade, section, allergies, medical_condition, parent_name, parent_contact_number, parent_email) VALUES (5, 'RFID555', '2024-0005', 'Klaus Mikaelson', 'New Orleans', 19, 'Grade 12', 'ABM-C', 'Silver', 'None', 'Mikael Mikaelson', '09119998887', 'klaus@mikaelson.com')")
+    cursor.execute("REPLACE INTO users (id, username, password, role, linked_student_id) VALUES (5, 'klausm', ?, 'student', 5)", (generate_password_hash("password123"),))
 
-    # Elena Gilbert - STEM-B
-    cursor.execute("INSERT OR IGNORE INTO students (id, rfid_uid, student_number, full_name, address, age, grade, section, allergies, medical_condition, parent_name, parent_contact_number, parent_email) VALUES (3, 'RFID333', '2024-0003', 'Elena Gilbert', 'Gilbert House', 17, 'Grade 11', 'STEM-B', 'None', 'None', 'Miranda Gilbert', '09998887776', 'elena@gilbert.com')")
-    cursor.execute("INSERT OR IGNORE INTO users (username, password, role, linked_student_id) VALUES ('elenag', ?, 'student', 3)", (generate_password_hash("password123"),))
-
-    # Nurse Bonnie Bennett
-    # Use ID 2 for BOTH tables so they link correctly
-    cursor.execute("INSERT OR IGNORE INTO nurses (id, full_name, username) VALUES (2, 'Bonnie Bennett', 'nurse_bonnie')")
-    cursor.execute("INSERT OR IGNORE INTO users (id, username, password, role) VALUES (2, 'nurse_bonnie', ?, 'nurse')", (generate_password_hash("nurse123"),))
+    # Nurse Bonnie Bennett (Login: nurse_bonnie / nurse123)
+    # Forced ID 2 for both to ensure session['user_id'] works
+    cursor.execute("REPLACE INTO nurses (id, full_name, username) VALUES (2, 'Bonnie Bennett', 'nurse_bonnie')")
+    cursor.execute("REPLACE INTO users (id, username, password, role, linked_student_id) VALUES (2, 'nurse_bonnie', ?, 'nurse', NULL)", (generate_password_hash("nurse123"),))
 
     conn.commit()
     conn.close()
+    print("Database updated successfully.")
 
 if __name__ == "__main__":
     create_database()
