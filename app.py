@@ -4,6 +4,8 @@ from werkzeug.security import check_password_hash
 import database
 from datetime import datetime
 from werkzeug.security import generate_password_hash
+import requests # Make sure to pip install requests
+import json
 
 app = Flask(__name__)
 app.secret_key = "clinic_secret_key"
@@ -187,6 +189,71 @@ def bulk_import_students():
     finally:
         conn.close()
 
+
+
+@app.route("/save_student", methods=["POST"])
+def save_student():
+    if session.get("role") != "nurse":
+        return redirect(url_for("login"))
+
+    # 1. Collect Form Data
+    s_id = request.form.get("id")
+    rfid = request.form.get("rfid_uid")
+    s_num = request.form.get("student_number").strip()
+    name = request.form.get("full_name").strip()
+    
+    # 2. Database Operation
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        if s_id:  # --- EDIT EXISTING STUDENT ---
+            cursor.execute("""
+                UPDATE students SET 
+                rfid_uid=?, student_number=?, full_name=?, address=?, age=?, 
+                grade=?, section=?, allergies=?, medical_condition=?, 
+                parent_name=?, parent_contact_number=?, parent_email=?
+                WHERE id=?
+            """, (rfid, s_num, name, request.form.get("address"), request.form.get("age"), 
+                  request.form.get("grade"), request.form.get("section"), 
+                  request.form.get("allergies"), request.form.get("medical_condition"), 
+                  request.form.get("parent_name"), request.form.get("parent_contact_number"), 
+                  request.form.get("parent_email"), s_id))
+            
+            # Update credentials username if the name changed
+            cursor.execute("UPDATE users SET username=? WHERE linked_student_id=?", (name, s_id))
+            
+        else:  # --- REGISTER NEW STUDENT ---
+            cursor.execute("""
+                INSERT INTO students 
+                (rfid_uid, student_number, full_name, address, age, grade, section, 
+                 allergies, medical_condition, parent_name, parent_contact_number, parent_email)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (rfid, s_num, name, request.form.get("address"), request.form.get("age"), 
+                  request.form.get("grade"), request.form.get("section"), 
+                  request.form.get("allergies"), request.form.get("medical_condition"), 
+                  request.form.get("parent_name"), request.form.get("parent_contact_number"), 
+                  request.form.get("parent_email")))
+            
+            new_student_id = cursor.lastrowid
+            
+            # --- AUTO-CREATE CREDENTIALS ---
+            # Username = Full Name, Password = Student Number (hashed)
+            hashed_password = generate_password_hash(s_num)
+            cursor.execute("""
+                INSERT INTO users (username, password, role, linked_student_id)
+                VALUES (?, ?, ?, ?)
+            """, (name, hashed_password, 'student', new_student_id))
+
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(f"Error saving student: {e}")
+    finally:
+        conn.close()
+
+    return redirect(url_for("manage_students"))
+
 # ================= VISIT HISTORY =================
 @app.route("/visit_history")
 def visit_history():
@@ -288,6 +355,62 @@ def get_student_by_number(student_num):
     return {"error": "Student Number not found"}, 404
 
 
+# ================= EMAIL SENDER FUNCTION =================
+def send_clinic_email(visit_id):
+    conn = get_db()
+    query = """
+        SELECT 
+            s.parent_name, s.parent_email, s.full_name, s.student_number,
+            v.time_in, v.temperature, v.complaint, v.medicine, v.diagnosis,
+            n.full_name AS nurse_name
+        FROM clinic_visits v
+        JOIN students s ON v.student_id = s.id
+        JOIN nurses n ON v.nurse_id = n.id
+        WHERE v.id = ?
+    """
+    row = conn.execute(query, (visit_id,)).fetchone()
+    conn.close()
+
+    if not row:
+        print(f"DEBUG: No visit found for ID {visit_id}")
+        return False
+
+    url = "https://api.emailjs.com/api/v1.0/email/send"
+    
+    payload = {
+        'service_id': 'service_lqw2xin',
+        'template_id': 'template_gex6jti',
+        'user_id': 'Yxm_edy2UUe3pY067',
+        'accessToken': 'WMmWiAgOH83IFkhXCN2iE',  # <--- ADD THIS LINE
+        'template_params': {
+            'parent_email': row['parent_email'],
+            'parent_name': row['parent_name'],
+            'full_name': row['full_name'],
+            'student_number': row['student_number'],
+            'time_in': row['time_in'],
+            'temperature': row['temperature'],
+            'complaint': row['complaint'],
+            'medicine': row['medicine'],
+            'diagnosis': row['diagnosis'],
+            'visit_status': 'returned to class',
+            'nurse_name': row['nurse_name']
+        }
+    }
+
+    headers = {'Content-Type': 'application/json'}
+    try:
+        response = requests.post(url, data=json.dumps(payload), headers=headers)
+        if response.status_code == 200:
+            print("DEBUG: Email sent successfully!")
+            return True
+        else:
+            print(f"DEBUG: EmailJS Error: {response.text}")
+            return False
+    except Exception as e:
+        print(f"DEBUG: Connection Error: {e}")
+        return False
+
+# ================= UPDATED ADD VISIT ROUTE =================
 @app.route("/add_visit", methods=["POST"])
 def add_visit():
     if session.get("role") != "nurse":
@@ -298,17 +421,25 @@ def add_visit():
     complaint = request.form["complaint"]
     diagnosis = request.form["diagnosis"]
     medicine = request.form["medicine"]
-    nurse_id = session.get("user_id")  # Uses the logged-in nurse's ID
+    nurse_id = session.get("user_id")
     time_in = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     conn = get_db()
-    conn.execute("""
+    cursor = conn.cursor()
+    cursor.execute("""
         INSERT INTO clinic_visits
         (student_id, nurse_id, temperature, complaint, diagnosis, medicine, time_in)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (student_id, nurse_id, temperature, complaint, diagnosis, medicine, time_in))
+    
+    # Capture the ID of the visit we just saved
+    new_visit_id = cursor.lastrowid
     conn.commit()
     conn.close()
+
+    # Trigger the Email sending
+    if new_visit_id:
+        send_clinic_email(new_visit_id)
 
     return redirect(url_for("nurse_dashboard"))
 
