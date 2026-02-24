@@ -64,20 +64,20 @@ def login():
 
 
 # ================= NURSE DASHBOARD =================
-# ================= NURSE - HOME (GRAPHS) =================
 @app.route("/nurse_dashboard")
 def nurse_dashboard():
     if session.get("role") != "nurse":
         return redirect(url_for("login"))
     
     conn = get_db()
+    today = datetime.now().strftime("%Y-%m-%d")
     
-    # 1. Visitation per Day (Last 7 Days)
+    # 1. Visitation per Day (Last 10 entries)
     visits_per_day = conn.execute("""
         SELECT date(time_in) as date, COUNT(*) as count 
         FROM clinic_visits 
         GROUP BY date(time_in) 
-        ORDER BY date DESC LIMIT 7
+        ORDER BY date DESC LIMIT 10
     """).fetchall()
     
     # 2. Visits per Grade Level
@@ -88,14 +88,22 @@ def nurse_dashboard():
         GROUP BY students.grade
     """).fetchall()
 
+    # 3. TOP SYMPTOMS (The new logic)
+    symptom_data = conn.execute("""
+        SELECT complaint, COUNT(*) as count 
+        FROM clinic_visits 
+        WHERE complaint IS NOT NULL AND complaint != ''
+        GROUP BY complaint 
+        ORDER BY count DESC LIMIT 5
+    """).fetchall()
+
     # Statistics for the cards
-    today = datetime.now().strftime("%Y-%m-%d")
     total_students = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
     total_visits_today = conn.execute("SELECT COUNT(*) FROM clinic_visits WHERE time_in LIKE ?", (f"{today}%",)).fetchone()[0]
     students_with_allergies = conn.execute("SELECT COUNT(*) FROM students WHERE allergies != '' AND allergies IS NOT NULL").fetchone()[0]
-    students_with_medical_conditions = conn.execute("SELECT COUNT(*) FROM students WHERE medical_condition != '' AND medical_condition IS NOT NULL").fetchone()[0]
+    students_with_conditions = conn.execute("SELECT COUNT(*) FROM students WHERE medical_condition != '' AND medical_condition IS NOT NULL").fetchone()[0]
     
-    nurse_id = session.get("user_id")
+    nurse_id = session.get("nurse_id")
     nurse = conn.execute("SELECT * FROM nurses WHERE id=?", (nurse_id,)).fetchone()
     conn.close()
 
@@ -105,11 +113,13 @@ def nurse_dashboard():
         total_students=total_students,
         total_visits_today=total_visits_today,
         students_with_allergies=students_with_allergies,
-        students_with_medical_conditions=students_with_medical_conditions,
-        graph_days=[row['date'] for row in visits_per_day],
-        graph_day_counts=[row['count'] for row in visits_per_day],
-        graph_grades=[row['grade'] for row in visits_per_grade],
-        graph_grade_counts=[row['count'] for row in visits_per_grade]
+        students_with_medical_conditions=students_with_conditions,
+        graph_days=[row['date'] for row in reversed(visits_per_day)], # reversed for chronological order
+        graph_day_counts=[row['count'] for row in reversed(visits_per_day)],
+        graph_grades=[f"Grade {row['grade']}" for row in visits_per_grade],
+        graph_grade_counts=[row['count'] for row in visits_per_grade],
+        graph_symptoms=[row['complaint'] for row in symptom_data],
+        graph_symptom_counts=[row['count'] for row in symptom_data]
     )
 
 # ================= MANAGE STUDENTS =================
@@ -261,16 +271,32 @@ def visit_history():
         return redirect(url_for("login"))
     
     conn = get_db()
-    visits = conn.execute("""
-        SELECT clinic_visits.*, students.full_name, students.student_number, nurses.full_name as nurse_name 
+    # Add row_factory so we can convert to dict
+    conn.row_factory = sqlite3.Row 
+    
+    # 1. Added parent info to the SELECT statement
+    visits_rows = conn.execute("""
+        SELECT 
+            clinic_visits.*, 
+            students.full_name, 
+            students.student_number, 
+            students.parent_name, 
+            students.parent_contact_number, 
+            students.parent_email,
+            nurses.full_name as nurse_name 
         FROM clinic_visits 
         JOIN students ON clinic_visits.student_id = students.id
         LEFT JOIN nurses ON clinic_visits.nurse_id = nurses.id
         ORDER BY time_in DESC
     """).fetchall()
     
+    # 2. CONVERT TO DICTIONARIES (This fixes the JSON error)
+    visits = [dict(row) for row in visits_rows]
+    
     nurse_id = session.get("user_id")
-    nurse = conn.execute("SELECT * FROM nurses WHERE id=?", (nurse_id,)).fetchone()
+    nurse_row = conn.execute("SELECT * FROM nurses WHERE id=?", (nurse_id,)).fetchone()
+    nurse = dict(nurse_row) if nurse_row else None
+    
     conn.close()
     
     return render_template("visit_history.html", visits=visits, nurse=nurse)
