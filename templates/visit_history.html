@@ -3,97 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visit History - CCC Clinic</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Visit History - University of Perpetual Help System Laguna Clinic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #1e3a8a;
-            --accent: #3b82f6;
+            --primary-light: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
             --bg: #f8fafc;
-            --white: #ffffff;
-            --text-main: #334155;
+            --surface: #ffffff;
+            --text-main: #1e293b;
             --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 12px;
+            --sidebar-width: 260px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
-        body { font-family: 'Roboto', sans-serif; background-color: var(--bg); margin: 0; color: var(--text-main); }
-        
-        header { 
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); 
-            color: white; padding: 1.2rem 2rem; 
-            display: flex; align-items: center; justify-content: space-between;
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg); 
+            margin: 0; 
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR NAVIGATION */
+        aside {
+            width: var(--sidebar-width);
+            background: var(--primary);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 2rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header h1 { 
+            font-size: 1.1rem; 
+            margin: 0; 
+            font-weight: 700; 
+            letter-spacing: -0.025em;
+            line-height: 1.2;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1.5rem 0.75rem;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: rgba(255,255,255,0.7);
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-nav a:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .sidebar-nav a.active {
+            background: var(--primary-light);
+            color: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        nav { background: var(--white); padding: 0.8rem 2rem; display: flex; gap: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        nav a { text-decoration: none; color: var(--text-muted); font-weight: 500; border-bottom: 3px solid transparent; padding-bottom: 5px; transition: 0.3s; }
-        nav a.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
+        .sidebar-footer {
+            padding: 1.5rem;
+            background: rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
 
-        .container { padding: 2rem; max-width: 1200px; margin: auto; }
-        
-        /* Search Bar Styling */
-        .controls { display: flex; gap: 15px; margin-bottom: 25px; align-items: center; }
-        .search-bar { flex: 1; position: relative; }
-        .search-bar input { 
-            width: 100%; padding: 14px 14px 14px 45px; border-radius: 12px; 
-            border: 1px solid #e2e8f0; font-size: 1rem; transition: 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        .logout-btn {
+            display: block;
+            margin-top: 10px;
+            text-align: center;
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            text-decoration: none;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            transition: 0.3s;
+        }
+        .logout-btn:hover { background: var(--danger); color: white; }
+
+        /* MAIN CONTENT AREA */
+        main {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 2.5rem;
+            max-width: calc(100% - var(--sidebar-width));
             box-sizing: border-box;
         }
-        .search-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); outline: none; }
-        .search-bar i { position: absolute; left: 18px; top: 18px; color: #94a3b8; }
 
-        /* Table Card Styling */
-        .table-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f1f5f9; color: var(--primary); padding: 1.2rem; text-align: left; font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; }
-        td { padding: 1.2rem; border-bottom: 1px solid #f1f5f9; }
+        .controls { 
+            display: flex; 
+            gap: 20px; 
+            margin-bottom: 30px; 
+            align-items: center;
+            background: var(--surface);
+            padding: 15px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
         
-        .clickable-row { cursor: pointer; transition: 0.2s; }
-        .clickable-row:hover { background: #f8fafc; }
+        .search-bar { flex: 1; position: relative; }
+        .search-bar input { 
+            width: 100%; 
+            padding: 12px 12px 12px 45px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border); 
+            font-size: 1rem; 
+            transition: 0.3s;
+            background: #f1f5f9;
+            box-sizing: border-box;
+        }
+        .search-bar input:focus { 
+            outline: none; 
+            border-color: var(--primary-light); 
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        .search-bar i { position: absolute; left: 16px; top: 15px; color: var(--text-muted); }
 
-        .time-badge { background: #eff6ff; color: #1e40af; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+        .table-wrapper {
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
 
-        /* Modal Styling */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(5px); }
-        .modal-content { background: white; margin: 5% auto; padding: 2.5rem; border-radius: 20px; width: 90%; max-width: 700px; position: relative; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        table { width: 100%; border-collapse: collapse; }
+        th { 
+            background: #f8fafc; 
+            color: var(--text-muted); 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            font-size: 0.75rem; 
+            letter-spacing: 0.05em;
+            padding: 1rem;
+            border-bottom: 2px solid var(--border);
+            text-align: left;
+        }
 
-        .section-title { padding: 10px 0; border-bottom: 2px solid #f1f5f9; margin: 25px 0 15px 0; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 10px; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .info-item { padding: 12px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; }
-        .info-item label { display: block; color: var(--text-muted); font-size: 0.7rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
-        .info-item span { font-size: 1rem; color: var(--primary); font-weight: 600; }
+        td { padding: 1.25rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        .clickable-row { transition: background 0.2s; cursor: pointer; }
+        .clickable-row:hover { background: #f1f5f9; }
+        
+        .time-badge {
+            background: #eff6ff;
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-        .close-btn { float: right; cursor: pointer; font-size: 24px; color: var(--text-muted); transition: 0.2s; }
-        .close-btn:hover { color: #ef4444; }
+        /* MODAL */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 2000; 
+            left: 0; top: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(15, 23, 42, 0.75); 
+            backdrop-filter: blur(4px);
+        }
+        .modal-content { 
+            background: var(--surface); 
+            margin: 3% auto; 
+            padding: 0; 
+            border-radius: 20px; 
+            width: 90%; 
+            max-width: 700px; 
+            max-height: 85vh; 
+            overflow: hidden; 
+            position: relative; 
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body { padding: 2rem; overflow-y: auto; }
+
+        .section-title { 
+            font-size: 0.85rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 25px 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+        .section-title::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .info-item { 
+            padding: 12px 16px; 
+            background: #f8fafc; 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+        }
+        .info-item label { display: block; color: var(--text-muted); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; }
+        .info-item span { font-size: 1rem; color: var(--text-main); font-weight: 600; }
     </style>
 </head>
 <body>
 
-<header>
-    <div style="display:flex; align-items:center; gap:15px;">
-        <i class="fas fa-notes-medical fa-2x"></i>
-        <h1>UPH SL Clinic Management</h1>
+<aside>
+    <div class="sidebar-header">
+        <i class="fas fa-clinic-medical fa-lg"></i>
+        <h1>UPH SL Clinic<br><small style="font-weight:400; opacity:0.8;">Management System</small></h1>
     </div>
-    <span><i class="fas fa-user-circle"></i> <strong>{{ nurse['full_name'] }}</strong></span>
-</header>
+    
+    <nav class="sidebar-nav">
+        <a href="{{ url_for('nurse_dashboard') }}">
+            <i class="fas fa-th-large"></i> Dashboard
+        </a>
+        <a href="{{ url_for('manage_students') }}">
+            <i class="fas fa-user-graduate"></i> Manage Students
+        </a>
+        <a href="{{ url_for('visit_history') }}" class="active">
+            <i class="fas fa-history"></i> Visit History
+        </a>
+    </nav>
 
-<nav>
-    <a href="{{ url_for('nurse_dashboard') }}">Home</a>
-    <a href="{{ url_for('manage_students') }}">Manage Students</a>
-    <a href="{{ url_for('visit_history') }}" class="active">Visit History</a>
-</nav>
+    <div class="sidebar-footer">
+        <div style="font-weight: 600; font-size: 0.9rem;"><i class="fas fa-user-circle"></i> {{ nurse['full_name'] }}</div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+    </div>
+</aside>
 
-<div class="container">
+<main>
     <div class="controls">
         <div class="search-bar">
             <i class="fas fa-search"></i>
-            <input type="text" id="visitSearch" placeholder="Search by name, date, or nurse..." oninput="filterVisits()">
+            <input type="text" id="visitSearch" placeholder="Search by student name, date, or nurse..." oninput="filterVisits()">
         </div>
     </div>
-    
-    <div class="table-card">
+
+    <div class="table-wrapper">
         <table>
             <thead>
                 <tr>
@@ -108,33 +297,39 @@
                     data-search="{{ v['full_name'] }} {{ v['time_in'] }} {{ v['nurse_name'] }}">
                     <td><span class="time-badge"><i class="far fa-calendar-alt"></i> {{ v['time_in'] }}</span></td>
                     <td><strong>{{ v['full_name'] }}</strong></td>
-                    <td><i class="fas fa-user-nurse" style="color:#94a3b8"></i> {{ v['nurse_name'] }}</td>
+                    <td><span style="color:var(--text-muted)"><i class="fas fa-user-nurse"></i> {{ v['nurse_name'] }}</span></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-</div>
+</main>
 
 <div id="visitModal" class="modal">
     <div class="modal-content">
-        <span class="close-btn" onclick="closeModal()">&times;</span>
-        <h2 style="margin-top:0; color:var(--primary);"><i class="fas fa-file-medical"></i> Visit Summary</h2>
-
-        <div class="section-title"><i class="fas fa-info-circle"></i> Medical Details</div>
-        <div class="info-grid">
-            <div class="info-item"><label>Date/Time</label><span id="det_time"></span></div>
-            <div class="info-item"><label>Attending Nurse</label><span id="det_nurse"></span></div>
-            <div class="info-item"><label>Chief Complaint</label><span id="det_complaint"></span></div>
-            <div class="info-item"><label>Final Diagnosis</label><span id="det_diagnosis"></span></div>
-            <div class="info-item" style="grid-column: span 2;"><label>Treatment Provided</label><span id="det_medicine"></span></div>
+        <div class="modal-header">
+            <h2 style="margin:0; color:var(--primary); font-size: 1.2rem;"><i class="fas fa-file-medical"></i> Visit Summary</h2>
+            <span onclick="closeModal()" style="cursor:pointer; font-size: 24px; color: var(--text-muted);">&times;</span>
         </div>
+        
+        <div class="modal-body">
+            <div class="section-title">Medical Details</div>
+            <div class="info-grid">
+                <div class="info-item"><label>Date & Time</label><span id="det_time"></span></div>
+                <div class="info-item"><label>Attending Nurse</label><span id="det_nurse"></span></div>
+                <div class="info-item"><label>Chief Complaint</label><span id="det_complaint"></span></div>
+                <div class="info-item"><label>Final Diagnosis</label><span id="det_diagnosis"></span></div>
+                <div class="info-item" style="grid-column: span 2;"><label>Treatment Provided</label><span id="det_medicine"></span></div>
+            </div>
 
-        <div class="section-title"><i class="fas fa-address-book"></i> Parent Notification</div>
-        <div class="info-grid">
-            <div class="info-item"><label>Parent Name</label><span id="det_pname"></span></div>
-            <div class="info-item"><label>Phone Number</label><span id="det_pcontact"></span></div>
-            <div class="info-item" style="grid-column: span 2;"><label>Email Registered</label><span id="det_pemail"></span></div>
+            <div class="section-title">Parent Information</div>
+            <div class="info-grid">
+                <div class="info-item"><label>Parent Name</label><span id="det_pname"></span></div>
+                <div class="info-item"><label>Phone Number</label><span id="det_pcontact"></span></div>
+                <div class="info-item" style="grid-column: span 2;"><label>Email Registered</label><span id="det_pemail"></span></div>
+            </div>
+            
+            <button class="btn-save" style="background:var(--primary); color:white; border:none; padding:12px; border-radius:8px; width:100%; margin-top:20px; font-weight:600; cursor:pointer;" onclick="closeModal()">Close Details</button>
         </div>
     </div>
 </div>
@@ -143,7 +338,6 @@
     function filterVisits() {
         const query = document.getElementById('visitSearch').value.toLowerCase();
         const rows = document.querySelectorAll('#visitBody tr');
-        
         rows.forEach(row => {
             const text = row.getAttribute('data-search').toLowerCase();
             row.style.display = text.includes(query) ? "" : "none";
@@ -159,7 +353,6 @@
         document.getElementById('det_pname').innerText = visit.parent_name || "N/A";
         document.getElementById('det_pcontact').innerText = visit.parent_contact_number || "N/A";
         document.getElementById('det_pemail').innerText = visit.parent_email || "N/A";
-
         document.getElementById('visitModal').style.display = 'block';
     }
 

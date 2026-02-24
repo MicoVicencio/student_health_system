@@ -5,8 +5,9 @@ from faker import Faker
 # Initialize Faker with Philippine locale
 fake = Faker('en_PH')
 
-def generate_excel_dummy_data(count=3000):
-    filename = "dummy_students_3000.xlsx"
+def generate_excel_dummy_data(count=500):
+    # Updated filename to reflect the count dynamically
+    filename = f"dummy_students_{count}.xlsx"
     
     data = []
     sections = ['STEM-A', 'STEM-B', 'HUMSS-A', 'ABM-A', 'GAS-A', 'ICT-A', 'HE-A']
@@ -28,7 +29,7 @@ def generate_excel_dummy_data(count=3000):
         # PH Mobile format
         contact_no = f"09{random.randint(10, 99)}-{random.randint(100, 999)}-{random.randint(1000, 9999)}"
 
-        # Create row
+        # Create row matching your SQL table schema
         row = {
             "rfid_uid": rfid,
             "student_number": student_no,
@@ -53,4 +54,5 @@ def generate_excel_dummy_data(count=3000):
     print(f"Successfully generated '{filename}'")
 
 if __name__ == "__main__":
-    generate_excel_dummy_data(3000)
+    # CHANGE THIS NUMBER: This is what determines the final count.
+    generate_excel_dummy_data(500)

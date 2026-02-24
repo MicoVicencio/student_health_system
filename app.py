@@ -23,45 +23,55 @@ def get_db():
 # ================= LOGIN =================
 @app.route("/", methods=["GET", "POST"])
 def login():
-
     if request.method == "POST":
-        # .strip() removes accidental spaces at the start or end
         username = request.form["username"].strip()
         password = request.form["password"].strip()
 
-        print(f"Login Attempt: User='{username}' Pass='{password}'") # Debugging
+        print(f"Login Attempt: User='{username}'") 
 
         conn = get_db()
-        # Use COLLATE NOCASE to ignore Capitalization differences
+        conn.row_factory = sqlite3.Row # Ensures we can use user["role"] etc.
+        
         user = conn.execute(
             "SELECT * FROM users WHERE username = ? COLLATE NOCASE",
             (username,)
         ).fetchone()
-        conn.close()
 
         if user:
-            # check_password_hash compares the plain text password to the hashed one
             if check_password_hash(user["password"], password):
-
+                # Basic session setup
                 session["user_id"] = user["id"]
                 session["role"] = user["role"]
                 session["linked_student_id"] = user["linked_student_id"]
 
+                # FIX: If the user is a nurse, find their ID in the nurses table
                 if user["role"] == "nurse":
+                    nurse_profile = conn.execute(
+                        "SELECT id FROM nurses WHERE username = ? COLLATE NOCASE", 
+                        (username,)
+                    ).fetchone()
+                    
+                    if nurse_profile:
+                        session["nurse_id"] = nurse_profile["id"]
+                        print(f"Nurse Session Set: nurse_id={nurse_profile['id']}")
+                    
+                    conn.close()
                     return redirect(url_for("nurse_dashboard"))
 
                 elif user["role"] == "student":
+                    conn.close()
                     return redirect(url_for("student_dashboard"))
 
             else:
+                conn.close()
                 print("Password mismatch")
-                return "Invalid password (Make sure it is your Student Number)"
+                return "Invalid password."
         else:
-            print(f"User '{username}' not found in database")
-            return "Invalid username (Make sure it is your exact Full Name)"
+            conn.close()
+            print(f"User '{username}' not found")
+            return "Invalid username."
 
     return render_template("login.html")
-
 
 # ================= NURSE DASHBOARD =================
 @app.route("/nurse_dashboard")
@@ -105,6 +115,7 @@ def nurse_dashboard():
     
     nurse_id = session.get("nurse_id")
     nurse = conn.execute("SELECT * FROM nurses WHERE id=?", (nurse_id,)).fetchone()
+    print(f"Logged in nurse: {dict(nurse) if nurse else 'Not Found'}")
     conn.close()
 
     return render_template(
@@ -150,56 +161,82 @@ def bulk_import_students():
     data = request.json
     if not data:
         return jsonify({"success": False, "message": "No data received"}), 400
-        
-    conn = get_db()
+
+    conn = sqlite3.connect("clinic.db", timeout=30)
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
-    
+
     try:
+        cursor.execute("PRAGMA journal_mode=WAL;")
+
+        students_batch = []
+        users_batch = []
+
         for row in data:
-            # CLEANING DATA: Force strings and remove decimals from numbers
             std_num = str(row.get('student_number', '')).split('.')[0].strip()
             full_name = str(row.get('full_name', '')).strip()
             rfid = str(row.get('rfid_uid', '')).strip()
 
-            # 1. RETAIN ORIGINAL STUDENT IMPORT CODE
-            cursor.execute("""
-                INSERT OR REPLACE INTO students 
-                (rfid_uid, student_number, full_name, address, age, grade, section, 
-                 allergies, medical_condition, parent_name, parent_contact_number, parent_email)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                rfid, std_num, full_name,
-                row.get('address'), row.get('age'), row.get('grade'), row.get('section'),
-                row.get('allergies'), row.get('medical_condition'), row.get('parent_name'),
-                row.get('parent_contact_number'), row.get('parent_email')
+            students_batch.append((
+                rfid,
+                std_num,
+                full_name,
+                row.get('address'),
+                row.get('age'),
+                row.get('grade'),
+                row.get('section'),
+                row.get('allergies'),
+                row.get('medical_condition'),
+                row.get('parent_name'),
+                row.get('parent_contact_number'),
+                row.get('parent_email')
             ))
 
-            # 2. ADD CREDENTIAL FUNCTION (Automated User Creation)
-            # Fetch the ID of the student we just inserted/updated
-            cursor.execute("SELECT id FROM students WHERE student_number = ?", (std_num,))
-            student_res = cursor.fetchone()
-            
-            if student_res:
-                student_id = student_res['id']
-                # Password is clean student number string, hashed
-                hashed_pass = generate_password_hash(std_num)
-                
-                # Insert user with 'student' role
-                cursor.execute("""
-                    INSERT OR REPLACE INTO users (username, password, role, linked_student_id)
-                    VALUES (?, ?, ?, ?)
-                """, (full_name, hashed_pass, 'student', student_id))
+        # 🔥 INSERT ALL STUDENTS AT ONCE
+        cursor.executemany("""
+            INSERT OR REPLACE INTO students 
+            (rfid_uid, student_number, full_name, address, age, grade, section, 
+             allergies, medical_condition, parent_name, parent_contact_number, parent_email)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, students_batch)
+
+        # 🔥 GET ALL STUDENT IDS IN ONE QUERY
+        student_numbers = [s[1] for s in students_batch]
+
+        cursor.execute(
+            f"SELECT id, student_number, full_name FROM students WHERE student_number IN ({','.join(['?']*len(student_numbers))})",
+            student_numbers
+        )
+
+        all_students = cursor.fetchall()
+
+        for student in all_students:
+            hashed_pass = generate_password_hash(student['student_number'])
+
+            users_batch.append((
+                student['full_name'],
+                hashed_pass,
+                'student',
+                student['id']
+            ))
+
+        # 🔥 INSERT USERS IN BATCH
+        cursor.executemany("""
+            INSERT OR REPLACE INTO users 
+            (username, password, role, linked_student_id)
+            VALUES (?, ?, ?, ?)
+        """, users_batch)
 
         conn.commit()
         return jsonify({"success": True})
+
     except Exception as e:
         conn.rollback()
-        print(f"Import Error: {e}") # This shows in your terminal
+        print("Import Error:", e)
         return jsonify({"success": False, "message": str(e)}), 500
+
     finally:
         conn.close()
-
-
 
 @app.route("/save_student", methods=["POST"])
 def save_student():

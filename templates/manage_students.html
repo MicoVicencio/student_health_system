@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Students - CCC Clinic</title>
+    <title>Manage Students - University of Perpetual Help System Laguna Clinic</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -19,6 +19,7 @@
             --text-muted: #64748b;
             --border: #e2e8f0;
             --radius: 12px;
+            --sidebar-width: 260px;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
@@ -28,46 +29,89 @@
             margin: 0; 
             color: var(--text-main);
             line-height: 1.5;
+            display: flex;
+            min-height: 100vh;
         }
 
-        /* Header & Nav */
-        header { 
-            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%); 
-            color: white; 
-            padding: 1.25rem 2.5rem; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between;
-            box-shadow: var(--shadow);
+        /* SIDEBAR NAVIGATION */
+        aside {
+            width: var(--sidebar-width);
+            background: var(--primary);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
         }
 
-        header h1 { font-size: 1.5rem; margin: 0; font-weight: 700; letter-spacing: -0.025em; }
-
-        nav { 
-            background: var(--surface); 
-            padding: 0; 
-            display: flex; 
-            justify-content: center;
-            gap: 40px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        .sidebar-header {
+            padding: 2rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        nav a { 
-            text-decoration: none; 
-            color: var(--text-muted); 
-            font-weight: 600; 
-            padding: 1rem 0;
-            border-bottom: 3px solid transparent; 
+        .sidebar-header h1 { 
+            font-size: 1.1rem; 
+            margin: 0; 
+            font-weight: 700; 
+            letter-spacing: -0.025em;
+            line-height: 1.2;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1.5rem 0.75rem;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: rgba(255,255,255,0.7);
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-weight: 500;
             transition: all 0.3s ease;
-            font-size: 0.95rem;
         }
 
-        nav a:hover { color: var(--primary-light); }
-        nav a.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .sidebar-nav a:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
 
-        .container { padding: 2.5rem; max-width: 1200px; margin: 0 auto; }
+        .sidebar-nav a.active {
+            background: var(--primary-light);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
 
-        /* Controls */
+        .sidebar-footer {
+            padding: 1.5rem;
+            background: rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-footer .user-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* MAIN CONTENT AREA */
+        main {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 2.5rem;
+            max-width: calc(100% - var(--sidebar-width));
+            box-sizing: border-box;
+        }
+
         .controls { 
             display: flex; 
             gap: 20px; 
@@ -98,7 +142,6 @@
         }
         .search-bar i { position: absolute; left: 16px; top: 15px; color: var(--text-muted); }
 
-        /* Table Design */
         .table-wrapper {
             background: var(--surface);
             border-radius: var(--radius);
@@ -117,6 +160,7 @@
             letter-spacing: 0.05em;
             padding: 1rem;
             border-bottom: 2px solid var(--border);
+            text-align: left;
         }
 
         td { padding: 1.25rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
@@ -132,7 +176,6 @@
             font-weight: 700;
         }
 
-        /* FAB */
         .fab-add { 
             position: fixed; 
             bottom: 40px; 
@@ -154,11 +197,10 @@
         }
         .fab-add:hover { transform: scale(1.1) rotate(90deg); background: #059669; }
 
-        /* Modal Styles */
         .modal { 
             display: none; 
             position: fixed; 
-            z-index: 1000; 
+            z-index: 2000; 
             left: 0; top: 0; 
             width: 100%; height: 100%; 
             background: rgba(15, 23, 42, 0.75); 
@@ -227,7 +269,6 @@
         .info-item label { display: block; color: var(--text-muted); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; }
         .info-item span { font-size: 1rem; color: var(--text-main); font-weight: 500; }
 
-        /* Forms */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .full-row { grid-column: span 2; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem; color: var(--text-main); }
@@ -258,27 +299,49 @@
         .btn-save { background: var(--success); color: white; }
         .btn-save:hover { background: #059669; }
 
-        /* Custom Checkbox */
+        .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 10px; margin: 20px 0; height: 12px; overflow: hidden; display: none; }
+        .progress-bar { width: 0%; height: 100%; background-color: var(--success); transition: width 0.3s ease; }
+
+        .bulk-ref-container { width: 100%; overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .ref-table { width: 100%; font-size: 0.7rem; border-collapse: collapse; background: white; white-space: nowrap; }
+        .ref-table th { background: #f1f5f9; padding: 8px; color: var(--primary); text-align: left; border-bottom: 2px solid var(--border); }
+        .ref-table td { padding: 8px; border-bottom: 1px solid #eee; color: var(--text-muted); }
+
         input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
     </style>
 </head>
 <body>
 
-<header>
-    <div style="display:flex; align-items:center; gap:12px;">
+<aside>
+    <div class="sidebar-header">
         <i class="fas fa-clinic-medical fa-lg"></i>
-        <h1>UPH SL Clinic Management</h1>
+        <h1>UPH SL Clinic<br><small style="font-weight:400; opacity:0.8;">Management System</small></h1>
     </div>
-    <span><i class="fas fa-user-circle"></i> <strong>{{ nurse['full_name'] }}</strong></span>
-</header>
+    
+    <nav class="sidebar-nav">
+        <a href="{{ url_for('nurse_dashboard') }}">
+            <i class="fas fa-th-large"></i> Home
+        </a>
+        <a href="{{ url_for('manage_students') }}" class="active">
+            <i class="fas fa-user-graduate"></i> Manage Students
+        </a>
+        <a href="{{ url_for('visit_history') }}">
+            <i class="fas fa-history"></i> Visit History
+        </a>
+    </nav>
 
-<nav>
-    <a href="{{ url_for('nurse_dashboard') }}">Home</a>
-    <a href="{{ url_for('manage_students') }}" class="active">Manage Students</a>
-    <a href="{{ url_for('visit_history') }}">Visit History</a>
-</nav>
+    <div class="sidebar-footer">
+        <div class="user-box">
+            <i class="fas fa-user-circle fa-2x" style="opacity:0.8"></i>
+            <div>
+                <div style="font-weight: 700; font-size: 0.9rem;">{{ nurse['full_name'] }}</div>
+                <div style="font-size: 0.7rem; opacity: 0.6; text-transform: uppercase;">School Nurse</div>
+            </div>
+        </div>
+    </div>
+</aside>
 
-<div class="container">
+<main>
     <div class="controls">
         <div class="search-bar">
             <i class="fas fa-search"></i>
@@ -309,7 +372,7 @@
             </tbody>
         </table>
     </div>
-</div>
+</main>
 
 <button class="fab-add" title="Add New Student" onclick="openAddModal()"><i class="fas fa-plus"></i></button>
 
@@ -329,13 +392,10 @@
             <div id="viewSection">
                 <div class="section-title"><i class="fas fa-user"></i> Personal Details</div>
                 <div id="profile_personal" class="info-grid"></div>
-
                 <div class="section-title"><i class="fas fa-heartbeat"></i> Health Profile</div>
                 <div id="profile_medical" class="info-grid"></div>
-
                 <div class="section-title"><i class="fas fa-phone-alt"></i> Emergency Contact</div>
                 <div id="profile_parent" class="info-grid"></div>
-
                 <div class="modal-footer" style="padding: 1.5rem 0 0 0; background: transparent;">
                     <button class="btn btn-delete" onclick="deleteCurrentStudent()"><i class="fas fa-trash-alt"></i> Delete</button>
                     <button class="btn btn-edit" onclick="enableEditMode()"><i class="fas fa-user-edit"></i> Edit Profile</button>
@@ -368,31 +428,35 @@
 
             <div id="bulkSection" style="display:none;">
                 <div style="background: #eff6ff; padding: 15px; border-radius: 10px; border: 1px solid #dbeafe; margin-bottom: 20px;">
-                    <p style="margin:0; font-size: 0.9rem; color: var(--primary);">Upload <strong>.xlsx</strong> or <strong>.csv</strong>. Ensure headers match the sample below.</p>
-                </div>
-                <div class="sample-box">
-                    <div class="sample-table-wrapper">
-                        <table class="sample-table" style="font-size: 11px;">
-                            <thead><tr><th>rfid_uid</th><th>student_number</th><th>full_name</th><th>grade</th><th>section</th><th>parent_email</th></tr></thead>
+                    <p style="margin:0; font-size: 0.9rem; color: var(--primary);">Upload <strong>.xlsx</strong> or <strong>.csv</strong>. Use these exact headers:</p>
+                    <div class="bulk-ref-container">
+                        <table class="ref-table">
+                            <thead>
+                                <tr>
+                                    <th>rfid_uid</th><th>student_number</th><th>full_name</th><th>address</th><th>age</th><th>grade</th><th>section</th><th>allergies</th><th>medical_condition</th><th>parent_name</th><th>parent_contact_number</th><th>parent_email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>123A456B</td><td>2024-0001</td><td>Juan Dela Cruz</td><td>Manila</td><td>15</td><td>10</td><td>St. Peter</td><td>Peanuts</td><td>Asthma</td><td>Maria Cruz</td><td>09123456789</td><td>maria@email.com</td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
-                <input type="file" id="bulkFile" accept=".csv, .xlsx, .xls" onchange="handleFileSelect(event)" style="margin-top:20px;">
+
+                <input type="file" id="bulkFile" accept=".csv, .xlsx, .xls" onchange="handleFileSelect(event)">
                 
-                <div id="importConfirmation">
-                    <i class="fas fa-check-circle"></i> <span id="confirmMessage"></span>
-                    <br><br>
-                    <button class="btn btn-save" style="width:100%; justify-content:center;" id="confirmImportBtn" onclick="processBulkImport()">Confirm & Import Now</button>
+                <div id="importConfirmation" style="display:none; margin-top:20px;">
+                    <p style="color: var(--text-main); font-weight: 600;">
+                        <i class="fas fa-check-circle" style="color:var(--success)"></i> <span id="confirmMessage"></span>
+                    </p>
+                    <button class="btn btn-save" style="width:100%; justify-content:center;" onclick="processBulkImport()">Confirm & Import Now</button>
                 </div>
 
-                <div id="importProgress" class="progress-container" style="display:none; margin-top:20px;">
-                    <div class="progress-text">
-                        <span id="progressStatus">Importing...</span>
-                        <span id="progressPercent">0%</span>
-                    </div>
-                    <div class="progress-bar-bg">
-                        <div id="progressBarFill" class="progress-bar-fill"></div>
-                    </div>
+                <div id="progressWrapper" style="display:none; margin-top:25px; text-align:center;">
+                    <div class="progress-container" id="progContainer" style="display:block;"><div class="progress-bar" id="progBar"></div></div>
+                    <small id="progText" style="color: var(--text-muted);">Initializing... 0%</small>
                 </div>
             </div>
         </div>
@@ -401,7 +465,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-    /* FUNCTIONS RETAINED AS PER ORIGINAL LOGIC */
     let activeStudentId = null;
     let pendingBulkData = [];
 
@@ -459,7 +522,7 @@
         document.getElementById('f_id').value = "";
         document.getElementById('modalTitle').innerText = "Register New Student";
         document.getElementById('tabContainer').style.display = "flex";
-        document.getElementById('importProgress').style.display = "none";
+        document.getElementById('progressWrapper').style.display = "none";
         document.getElementById('importConfirmation').style.display = "none";
         switchTab('manual');
         document.getElementById('mainModal').style.display = "block";
@@ -477,11 +540,7 @@
         document.getElementById('tabBulkBtn').classList.toggle('active', type === 'bulk');
     }
 
-    function enableEditMode() {
-        showSection('form');
-        document.getElementById('modalTitle').innerText = "Edit Student Information";
-    }
-
+    function enableEditMode() { showSection('form'); document.getElementById('modalTitle').innerText = "Edit Student Information"; }
     function closeModal() { document.getElementById('mainModal').style.display = 'none'; }
 
     function handleFileSelect(e) {
@@ -491,30 +550,25 @@
             const data = new Uint8Array(evt.target.result);
             const wb = XLSX.read(data, {type: 'array'});
             pendingBulkData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-            document.getElementById('confirmMessage').innerText = `Valid Data: ${pendingBulkData.length} records found.`;
+            document.getElementById('confirmMessage').innerText = `${pendingBulkData.length} valid rows detected.`;
             document.getElementById('importConfirmation').style.display = 'block';
-            document.getElementById('importProgress').style.display = "none";
         };
         reader.readAsArrayBuffer(file);
     }
 
     async function processBulkImport() {
-        const confirmDiv = document.getElementById('importConfirmation');
-        const progressDiv = document.getElementById('importProgress');
-        const barFill = document.getElementById('progressBarFill');
-        const percentText = document.getElementById('progressPercent');
-
-        confirmDiv.style.display = 'none';
-        progressDiv.style.display = 'block';
-        
+        document.getElementById('importConfirmation').style.display = 'none';
+        document.getElementById('progressWrapper').style.display = 'block';
+        let bar = document.getElementById('progBar');
+        let text = document.getElementById('progText');
         let progress = 0;
-        const interval = setInterval(() => {
-            if (progress < 90) {
+        let interval = setInterval(() => {
+            if(progress < 85) {
                 progress += Math.random() * 8;
-                barFill.style.width = progress + "%";
-                percentText.innerText = Math.floor(progress) + "%";
+                bar.style.width = progress + "%";
+                text.innerText = `Saving to database... ${Math.floor(progress)}%`;
             }
-        }, 300);
+        }, 150);
 
         try {
             const response = await fetch('/bulk_import_students', {
@@ -524,25 +578,23 @@
             });
             const result = await response.json();
             clearInterval(interval);
-            if (result.success) {
-                barFill.style.width = "100%";
-                percentText.innerText = "100%";
-                setTimeout(() => { alert("Import Successful!"); location.reload(); }, 500);
-            } else {
-                alert("Error: " + result.message);
-                progressDiv.style.display = 'none';
-                confirmDiv.style.display = 'block';
+            if (result.success) { 
+                bar.style.width = "100%";
+                text.innerText = "Success! Reloading...";
+                setTimeout(() => { location.reload(); }, 600);
+            } else { 
+                alert("Import Failed: " + result.message); 
+                document.getElementById('progressWrapper').style.display = 'none'; 
             }
-        } catch (error) {
+        } catch (error) { 
             clearInterval(interval);
-            alert("Server connection failed.");
-            progressDiv.style.display = 'none';
-            confirmDiv.style.display = 'block';
+            alert("Connection error."); 
+            document.getElementById('progressWrapper').style.display = 'none'; 
         }
     }
 
     function deleteCurrentStudent() {
-        if(confirm("Are you sure you want to delete this student record? This cannot be undone.")) {
+        if(confirm("Permanently delete this student?")) {
             fetch('/delete_students', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
