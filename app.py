@@ -3,6 +3,7 @@ import sqlite3
 from werkzeug.security import check_password_hash
 import database
 from datetime import datetime
+from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
 app.secret_key = "clinic_secret_key"
@@ -22,30 +23,40 @@ def get_db():
 def login():
 
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        # .strip() removes accidental spaces at the start or end
+        username = request.form["username"].strip()
+        password = request.form["password"].strip()
+
+        print(f"Login Attempt: User='{username}' Pass='{password}'") # Debugging
 
         conn = get_db()
+        # Use COLLATE NOCASE to ignore Capitalization differences
         user = conn.execute(
-            "SELECT * FROM users WHERE username=?",
+            "SELECT * FROM users WHERE username = ? COLLATE NOCASE",
             (username,)
         ).fetchone()
         conn.close()
 
-        if user and check_password_hash(user["password"], password):
+        if user:
+            # check_password_hash compares the plain text password to the hashed one
+            if check_password_hash(user["password"], password):
 
-            session["user_id"] = user["id"]
-            session["role"] = user["role"]
-            session["linked_student_id"] = user["linked_student_id"]
+                session["user_id"] = user["id"]
+                session["role"] = user["role"]
+                session["linked_student_id"] = user["linked_student_id"]
 
-            if user["role"] == "nurse":
-                return redirect(url_for("nurse_dashboard"))
+                if user["role"] == "nurse":
+                    return redirect(url_for("nurse_dashboard"))
 
-            elif user["role"] == "student":
-                return redirect(url_for("student_dashboard"))
+                elif user["role"] == "student":
+                    return redirect(url_for("student_dashboard"))
 
+            else:
+                print("Password mismatch")
+                return "Invalid password (Make sure it is your Student Number)"
         else:
-            return "Invalid username or password"
+            print(f"User '{username}' not found in database")
+            return "Invalid username (Make sure it is your exact Full Name)"
 
     return render_template("login.html")
 
@@ -125,24 +136,54 @@ def delete_students():
 @app.route("/bulk_import_students", methods=["POST"])
 def bulk_import_students():
     data = request.json
+    if not data:
+        return jsonify({"success": False, "message": "No data received"}), 400
+        
     conn = get_db()
+    cursor = conn.cursor()
+    
     try:
         for row in data:
-            conn.execute("""
+            # CLEANING DATA: Force strings and remove decimals from numbers
+            std_num = str(row.get('student_number', '')).split('.')[0].strip()
+            full_name = str(row.get('full_name', '')).strip()
+            rfid = str(row.get('rfid_uid', '')).strip()
+
+            # 1. RETAIN ORIGINAL STUDENT IMPORT CODE
+            cursor.execute("""
                 INSERT OR REPLACE INTO students 
                 (rfid_uid, student_number, full_name, address, age, grade, section, 
                  allergies, medical_condition, parent_name, parent_contact_number, parent_email)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                row.get('rfid_uid'), row.get('student_number'), row.get('full_name'),
+                rfid, std_num, full_name,
                 row.get('address'), row.get('age'), row.get('grade'), row.get('section'),
                 row.get('allergies'), row.get('medical_condition'), row.get('parent_name'),
                 row.get('parent_contact_number'), row.get('parent_email')
             ))
+
+            # 2. ADD CREDENTIAL FUNCTION (Automated User Creation)
+            # Fetch the ID of the student we just inserted/updated
+            cursor.execute("SELECT id FROM students WHERE student_number = ?", (std_num,))
+            student_res = cursor.fetchone()
+            
+            if student_res:
+                student_id = student_res['id']
+                # Password is clean student number string, hashed
+                hashed_pass = generate_password_hash(std_num)
+                
+                # Insert user with 'student' role
+                cursor.execute("""
+                    INSERT OR REPLACE INTO users (username, password, role, linked_student_id)
+                    VALUES (?, ?, ?, ?)
+                """, (full_name, hashed_pass, 'student', student_id))
+
         conn.commit()
         return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
+        conn.rollback()
+        print(f"Import Error: {e}") # This shows in your terminal
+        return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
 

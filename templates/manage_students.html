@@ -38,7 +38,6 @@
         .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; cursor: pointer; font-weight: bold; color: #64748b; border-radius: 8px; }
         .tab-btn.active { background: white; color: #1e3a8a; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
-        /* The design you liked: Blue Section Titles & Info Grids */
         .section-title { background: #f1f5f9; padding: 10px; border-left: 5px solid #1e3a8a; margin: 20px 0 10px 0; font-weight: bold; color: #1e3a8a; display: flex; align-items: center; gap: 10px;}
         .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .info-item { padding: 10px; background: #fff; border: 1px solid #edf2f7; border-radius: 6px; }
@@ -50,6 +49,12 @@
         .full-row { grid-column: span 2; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; color: #334155; }
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+
+        /* Progress Bar UI */
+        .progress-container { display: none; margin-top: 20px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 20px; border-radius: 8px; }
+        .progress-bar-bg { width: 100%; background: #e2e8f0; height: 12px; border-radius: 6px; margin: 10px 0; overflow: hidden; }
+        .progress-bar-fill { width: 0%; height: 100%; background: #16a34a; transition: width 0.3s ease; }
+        .progress-text { display: flex; justify-content: space-between; font-weight: bold; color: #1e3a8a; font-size: 0.9rem; }
 
         /* Import Sample UI */
         .sample-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; margin: 15px 0; }
@@ -124,13 +129,13 @@
 
         <div id="viewSection">
             <div class="section-title"><i class="fas fa-info-circle"></i> Personal Information</div>
-            <div class="info-grid" id="profile_personal"></div>
+            <div id="profile_personal" class="info-grid"></div>
 
             <div class="section-title"><i class="fas fa-briefcase-medical"></i> Medical Records</div>
-            <div class="info-grid" id="profile_medical"></div>
+            <div id="profile_medical" class="info-grid"></div>
 
             <div class="section-title"><i class="fas fa-users"></i> Emergency / Parent Contact</div>
-            <div class="info-grid" id="profile_parent"></div>
+            <div id="profile_parent" class="info-grid"></div>
 
             <div class="modal-footer">
                 <button class="btn btn-delete" onclick="deleteCurrentStudent()"><i class="fas fa-trash-alt"></i> Delete Student</button>
@@ -172,10 +177,22 @@
                 </div>
             </div>
             <input type="file" id="bulkFile" accept=".csv, .xlsx, .xls" onchange="handleFileSelect(event)">
+            
             <div id="importConfirmation">
                 <i class="fas fa-check-circle"></i> <span id="confirmMessage"></span>
                 <br><br>
-                <button class="btn btn-save" style="width:100%" onclick="processBulkImport()">Confirm & Import Now</button>
+                <button class="btn btn-save" style="width:100%" id="confirmImportBtn" onclick="processBulkImport()">Confirm & Import Now</button>
+            </div>
+
+            <div id="importProgress" class="progress-container">
+                <div class="progress-text">
+                    <span id="progressStatus">Importing & Hashing Credentials...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="progressBarFill" class="progress-bar-fill"></div>
+                </div>
+                <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">This may take a moment as we securely encrypt passwords for each student.</p>
             </div>
         </div>
     </div>
@@ -193,7 +210,6 @@
         });
     }
 
-    // VIEW PROFILE
     function viewProfile(id) {
         activeStudentId = id;
         fetch(`/get_student_info/${id}`).then(res => res.json()).then(data => {
@@ -215,7 +231,6 @@
                 <div class="info-item" style="grid-column: span 2;"><label>Email</label><span>${data.parent_email || 'N/A'}</span></div>
             `;
             
-            // Map data to hidden form for editing
             document.getElementById('f_id').value = data.id;
             document.getElementById('f_name').value = data.full_name;
             document.getElementById('f_num').value = data.student_number;
@@ -242,6 +257,8 @@
         document.getElementById('f_id').value = "";
         document.getElementById('modalTitle').innerText = "Register New Student";
         document.getElementById('tabContainer').style.display = "flex";
+        document.getElementById('importProgress').style.display = "none";
+        document.getElementById('importConfirmation').style.display = "none";
         switchTab('manual');
         document.getElementById('mainModal').style.display = "block";
     }
@@ -265,7 +282,6 @@
 
     function closeModal() { document.getElementById('mainModal').style.display = 'none'; }
 
-    // BULK LOGIC
     function handleFileSelect(e) {
         const file = e.target.files[0];
         const reader = new FileReader();
@@ -275,16 +291,60 @@
             pendingBulkData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
             document.getElementById('confirmMessage').innerText = `Excel Validated: ${pendingBulkData.length} students found.`;
             document.getElementById('importConfirmation').style.display = 'block';
+            document.getElementById('importProgress').style.display = "none";
         };
         reader.readAsArrayBuffer(file);
     }
 
-    function processBulkImport() {
-        fetch('/bulk_import_students', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(pendingBulkData)
-        }).then(() => location.reload());
+    async function processBulkImport() {
+        const confirmBtn = document.getElementById('confirmImportBtn');
+        const confirmDiv = document.getElementById('importConfirmation');
+        const progressDiv = document.getElementById('importProgress');
+        const barFill = document.getElementById('progressBarFill');
+        const percentText = document.getElementById('progressPercent');
+
+        confirmDiv.style.display = 'none';
+        progressDiv.style.display = 'block';
+        
+        // Start simulation of progress (Since a single fetch is atomic)
+        let progress = 0;
+        const interval = setInterval(() => {
+            if (progress < 90) {
+                progress += Math.random() * 5;
+                barFill.style.width = progress + "%";
+                percentText.innerText = Math.floor(progress) + "%";
+            }
+        }, 400);
+
+        try {
+            const response = await fetch('/bulk_import_students', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(pendingBulkData)
+            });
+            
+            const result = await response.json();
+            clearInterval(interval);
+
+            if (result.success) {
+                barFill.style.width = "100%";
+                percentText.innerText = "100%";
+                setTimeout(() => {
+                    alert("Import Successful! Credentials have been generated for all students.");
+                    location.reload();
+                }, 500);
+            } else {
+                alert("Error: " + result.message);
+                progressDiv.style.display = 'none';
+                confirmDiv.style.display = 'block';
+            }
+        } catch (error) {
+            clearInterval(interval);
+            console.error('Error:', error);
+            alert("Server connection failed.");
+            progressDiv.style.display = 'none';
+            confirmDiv.style.display = 'block';
+        }
     }
 
     function deleteCurrentStudent() {
