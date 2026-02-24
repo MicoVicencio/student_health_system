@@ -392,7 +392,6 @@ def send_clinic_email(visit_id):
             'complaint': row['complaint'],
             'medicine': row['medicine'],
             'diagnosis': row['diagnosis'],
-            'visit_status': 'returned to class',
             'nurse_name': row['nurse_name']
         }
     }
