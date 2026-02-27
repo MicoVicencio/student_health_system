@@ -406,16 +406,22 @@ def get_student_by_rfid(rfid_uid):
     conn.close()
     return {"error": "RFID not found"}, 404
 
-# NEW: Search by Student Number
 @app.route("/get_student_by_number/<student_num>")
 def get_student_by_number(student_num):
-    conn = get_db()
-    student = conn.execute("SELECT * FROM students WHERE student_number=?", (student_num,)).fetchone()
+    db = get_db()
+    # Query must match the columns in your 'students' table
+    student = db.execute("SELECT id, full_name, grade, section FROM students WHERE student_number = ?", (student_num,)).fetchone()
+    
     if student:
-        conn.close()
-        return get_student_info(student["id"])
-    conn.close()
-    return {"error": "Student Number not found"}, 404
+        # Convert the SQLite Row object to a Dictionary
+        return jsonify({
+            "id": student["id"],
+            "full_name": student["full_name"],
+            "grade": student["grade"],
+            "section": student["section"]
+        })
+    
+    return jsonify({"error": "Student Number not found"}), 404
 
 
 # ================= EMAIL SENDER FUNCTION =================

@@ -370,10 +370,15 @@
     }
 
     function fetchByStudentNumber() {
-        let num = document.getElementById('manualIdInput').value;
-        if(!num) return;
-        fetch(`/get_student_by_student_number/${num}`).then(res => res.json()).then(data => data.error ? alert(data.error) : renderVisitForm(data));
-    }
+    let num = document.getElementById('manualIdInput').value;
+    if(!num) return;
+    
+    // Change the URL here to match your Python route
+    fetch(`/get_student_by_number/${num}`) 
+        .then(res => res.json())
+        .then(data => data.error ? alert(data.error) : renderVisitForm(data))
+        .catch(err => console.error("Error:", err));
+}
 
     function renderVisitForm(data) {
         formArea.style.display = 'block';
