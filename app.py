@@ -394,7 +394,29 @@ def get_student_info(student_id):
         "parent_email": student["parent_email"],
         "visits": [dict(v) for v in visits]
     }
+# ================= VERIFY NURSE (Re-authentication) =================
+# Paste this route into app.py, right after the manage_students route.
+# check_password_hash is already imported — no new imports needed.
 
+@app.route("/verify_nurse", methods=["POST"])
+def verify_nurse():
+    if session.get("role") != "nurse":
+        return jsonify({"success": False, "message": "Not authorized"}), 403
+
+    data = request.get_json()
+    entered_password = data.get("password", "").strip()
+
+    conn = get_db()
+    user = conn.execute(
+        "SELECT password FROM users WHERE id = ?",
+        (session.get("user_id"),)
+    ).fetchone()
+    conn.close()
+
+    if user and check_password_hash(user["password"], entered_password):
+        return jsonify({"success": True})
+    else:
+        return jsonify({"success": False, "message": "Incorrect password. Please try again."})
 # Search by RFID for the scanner
 @app.route("/get_student_by_rfid/<rfid_uid>")
 def get_student_by_rfid(rfid_uid):
