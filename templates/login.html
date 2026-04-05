@@ -4,270 +4,294 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Clinic System Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
-/* ============================= */
-/* UNIVERSITY THEME COLORS       */
-/* ============================= */
-
 :root {
-    --primary-blue: #1f4fa3;
-    --dark-blue: #173c7a;
-    --light-blue: #2f66cc;
-    --white: #ffffff;
-    --glass: rgba(255, 255, 255, 0.15);
+    --navy:        #000066;
+    --yellow:      #FFFF00;
+    --white:       #FFFFFF;
+
+    --bg:          #eef0fb;
+    --bg-lighter:  #f7f8ff;
+    --card-bg:     #ffffff;
+    --navy-soft:   rgba(0, 0, 102, 0.07);
+    --navy-border: rgba(0, 0, 102, 0.15);
+    --text-muted:  rgba(0, 0, 102, 0.45);
 }
 
-/* ============================= */
-/* GLOBAL STYLES */
-/* ============================= */
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', sans-serif;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    height: 100vh;
-    background: linear-gradient(135deg, var(--dark-blue), var(--primary-blue));
+    min-height: 100vh;
+    background: linear-gradient(145deg, #dde2ff 0%, #f5f6ff 55%, #fffde8 100%);
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    position: relative;
 }
 
-/* Background animated circles */
-body::before,
-body::after {
+/* Background grid */
+.bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(0,0,102,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,102,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Soft orbs */
+.orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+    z-index: 0;
+    animation: pulse 7s ease-in-out infinite alternate;
+}
+.orb-1 {
+    width: 480px; height: 480px;
+    top: -160px; left: -140px;
+    background: radial-gradient(circle, rgba(200,205,255,0.7), transparent 70%);
+}
+.orb-2 {
+    width: 380px; height: 380px;
+    bottom: -130px; right: -100px;
+    background: radial-gradient(circle, rgba(255,255,160,0.55), transparent 70%);
+    animation-delay: 3.5s;
+}
+@keyframes pulse {
+    from { transform: scale(1);   opacity: 0.8; }
+    to   { transform: scale(1.1); opacity: 1;   }
+}
+
+/* Corner accents */
+.corner { position: fixed; width: 70px; height: 70px; pointer-events: none; z-index: 1; }
+.corner-tl { top:24px; left:24px;   border-top:2px solid var(--navy); border-left:2px solid var(--navy); }
+.corner-tr { top:24px; right:24px;  border-top:2px solid var(--navy); border-right:2px solid var(--navy); }
+.corner-bl { bottom:24px; left:24px;  border-bottom:2px solid var(--navy); border-left:2px solid var(--navy); }
+.corner-br { bottom:24px; right:24px; border-bottom:2px solid var(--navy); border-right:2px solid var(--navy); }
+
+/* Login card */
+.login-container {
+    position: relative;
+    z-index: 10;
+    width: 400px;
+    padding: 44px 40px 36px;
+    border-radius: 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--navy-border);
+    box-shadow: 0 4px 6px rgba(0,0,102,0.04), 0 20px 50px rgba(0,0,102,0.10);
+    animation: slideUp 0.65s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.login-container::before {
     content: "";
     position: absolute;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.05);
-    animation: float 8s infinite ease-in-out alternate;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--navy), #3333bb, var(--navy));
+    border-radius: 16px 16px 0 0;
 }
 
-body::before {
-    width: 400px;
-    height: 400px;
-    top: -100px;
-    left: -100px;
-}
+/* Logo */
+.logo { text-align: center; margin-bottom: 30px; }
 
-body::after {
-    width: 300px;
-    height: 300px;
-    bottom: -100px;
-    right: -100px;
-}
-
-@keyframes float {
-    from { transform: translateY(0px); }
-    to { transform: translateY(40px); }
-}
-
-/* ============================= */
-/* LOGIN CARD */
-/* ============================= */
-
-.login-container {
-    width: 380px;
-    padding: 40px;
-    border-radius: 20px;
-    background: var(--glass);
-    backdrop-filter: blur(15px);
-    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-    color: var(--white);
-    animation: fadeIn 1s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.logo {
-    text-align: center;
-    margin-bottom: 25px;
-}
-
-.logo img {
-    width: 90px;
-    margin-bottom: 10px;
-}
-
+.logo img { width: 58px; height: 58px; object-fit: contain; }
 .logo h2 {
-    font-weight: 600;
-    letter-spacing: 1px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 1.8px;
+    color: var(--navy);
+    text-transform: uppercase;
+    line-height: 1.35;
+}
+.logo p {
+    margin-top: 5px;
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+.divider {
+    width: 36px; height: 3px;
+    background: var(--yellow);
+    border: 1px solid rgba(180,160,0,0.35);
+    border-radius: 2px;
+    margin: 12px auto 0;
 }
 
-/* ============================= */
-/* INPUT FIELDS */
-/* ============================= */
-
-.input-group {
-    position: relative;
-    margin-bottom: 25px;
-}
-
+/* Inputs */
+.input-group { position: relative; margin-bottom: 22px; }
 .input-group input {
     width: 100%;
-    padding: 14px 10px;
-    border: none;
+    padding: 14px 42px 14px 14px;
+    border: 1.5px solid var(--navy-border);
     border-radius: 8px;
     outline: none;
-    background: rgba(255,255,255,0.2);
-    color: var(--white);
+    background: var(--bg-lighter);
+    color: var(--navy);
     font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
 }
-
 .input-group label {
     position: absolute;
-    top: 50%;
-    left: 12px;
+    top: 50%; left: 14px;
     transform: translateY(-50%);
     font-size: 13px;
     pointer-events: none;
-    transition: 0.3s;
-    color: #ddd;
+    transition: 0.25s cubic-bezier(0.22,1,0.36,1);
+    color: var(--text-muted);
 }
-
+.input-group input:focus,
+.input-group input:valid {
+    border-color: var(--navy);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(0,0,102,0.08);
+}
 .input-group input:focus + label,
 .input-group input:valid + label {
-    top: -8px;
-    left: 8px;
-    background: var(--primary-blue);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 11px;
+    top: 0; left: 10px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--navy);
+    background: var(--white);
+    padding: 0 5px;
+    transform: translateY(-50%);
+    font-weight: 600;
 }
 
-/* ============================= */
-/* PASSWORD TOGGLE */
-/* ============================= */
-
+/* Password toggle */
 .toggle-password {
     position: absolute;
-    right: 10px;
-    top: 50%;
+    right: 12px; top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
-    font-size: 12px;
-    color: #eee;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--navy);
+    opacity: 0.45;
+    transition: opacity 0.2s;
+    user-select: none;
+    font-weight: 600;
 }
+.toggle-password:hover { opacity: 1; }
 
-/* ============================= */
-/* BUTTON */
-/* ============================= */
-
+/* Button */
 .login-btn {
     width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 10px;
-    background: var(--white);
-    color: var(--primary-blue);
-    font-weight: bold;
+    padding: 13px;
+    margin-top: 4px;
+    border: 2px solid var(--navy);
+    border-radius: 8px;
+    background: var(--navy);
+    color: var(--yellow);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: 0.3s;
+    transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.15s;
 }
-
 .login-btn:hover {
-    background: var(--light-blue);
-    color: var(--white);
+    background: var(--white);
+    color: var(--navy);
+    box-shadow: 0 4px 18px rgba(0,0,102,0.15);
 }
+.login-btn:active { transform: scale(0.98); }
 
-/* ============================= */
-/* FOOTER */
-/* ============================= */
-
+/* Footer */
 .footer {
-    margin-top: 20px;
+    margin-top: 28px;
     text-align: center;
-    font-size: 12px;
-    opacity: 0.8;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
 }
 
-/* ============================= */
-/* RESPONSIVE */
-/* ============================= */
-
-@media(max-width: 400px) {
-    .login-container {
-        width: 90%;
-        padding: 25px;
-    }
+@media (max-width: 440px) {
+    .login-container { width: 92%; padding: 32px 24px 28px; }
+    .corner { width: 48px; height: 48px; }
 }
-
 </style>
 </head>
 
 <body>
 
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+
 <div class="login-container">
 
     <div class="logo">
-        <img src="static/logo.jpg" alt="University Logo">
+        <div class="logo-img-wrap">
+            <img src="static/logo.png" alt="University Logo">
+        </div>
         <h2>Clinic Monitoring System</h2>
-        <p style="font-size:12px; opacity:0.8;">University of Perpetual Help Laguna</p>
+        <p>Cainta Catholic College</p>
+        <div class="divider"></div>
     </div>
 
     <form method="POST">
 
         <div class="input-group">
-            <input type="text" name="username" required>
-            <label>Username</label>
+            <input type="text" name="username" id="username" required>
+            <label for="username">Username</label>
         </div>
 
         <div class="input-group">
             <input type="password" name="password" id="password" required>
-            <label>Password</label>
+            <label for="password">Password</label>
             <span class="toggle-password" onclick="togglePassword()">Show</span>
         </div>
 
-        <button type="submit" class="login-btn">LOGIN</button>
+        <button type="submit" class="login-btn">Login</button>
 
     </form>
 
     <div class="footer">
-        RFID-Based Student Health Monitoring System © 2026
+        RFID-Based Student Health Monitoring System &copy; 2026
     </div>
 
 </div>
 
 <script>
-
-/* ============================= */
-/* SHOW / HIDE PASSWORD */
-/* ============================= */
-
 function togglePassword() {
-    const password = document.getElementById("password");
+    const pwd = document.getElementById("password");
     const toggle = document.querySelector(".toggle-password");
-
-    if (password.type === "password") {
-        password.type = "text";
+    if (pwd.type === "password") {
+        pwd.type = "text";
         toggle.innerText = "Hide";
     } else {
-        password.type = "password";
+        pwd.type = "password";
         toggle.innerText = "Show";
     }
 }
 
-/* ============================= */
-/* SMOOTH INPUT FOCUS EFFECT */
-/* ============================= */
-
 document.querySelectorAll("input").forEach(input => {
-    input.addEventListener("focus", () => {
-        input.style.background = "rgba(255,255,255,0.3)";
-    });
-    input.addEventListener("blur", () => {
-        input.style.background = "rgba(255,255,255,0.2)";
-    });
+    input.addEventListener("focus", () => input.style.background = "#ffffff");
+    input.addEventListener("blur",  () => input.style.background = "#f7f8ff");
 });
-
 </script>
 
 </body>

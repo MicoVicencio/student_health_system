@@ -36,7 +36,7 @@ def generate_excel_dummy_data(count=500):
             "full_name": student_name,
             "address": fake.address().replace('\n', ', '),
             "age": random.randint(16, 19),
-            "grade": random.choice(["11", "12"]),
+            "grade": random.choice(["11", "12","10","9","8","7"]),
             "section": random.choice(sections),
             "allergies": random.choice(allergy_list),
             "medical_condition": random.choice(medical_issues),
@@ -55,4 +55,4 @@ def generate_excel_dummy_data(count=500):
 
 if __name__ == "__main__":
     # CHANGE THIS NUMBER: This is what determines the final count.
-    generate_excel_dummy_data(500)
+    generate_excel_dummy_data(100)
